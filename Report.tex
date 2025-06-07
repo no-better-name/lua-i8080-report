@@ -1,0 +1,211 @@
+\startenvironment Report
+
+\environment Base
+
+\setupsectionblock[contents][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[task][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[intro][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[main][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[conclude][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[sources][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[appendix][
+    before=\setupcaptions[way=byappendixchapter, prefix=yes],
+    page=yes,
+    number=yes,
+]
+
+\define\defaultparindent{2.5em}
+
+\setupinterlinespace[line=3.5ex]
+
+\unprotect
+\defineconversion[\s!ru][a][\russiannumerals]
+\defineconversion[\s!ru][A][\corpstyle\russianNumerals]
+\protect
+
+\setuptyping[
+    lines=yes,
+    before=\switchtointerlinespace[distance=0pt, line=2.5ex],
+]
+
+\defineframed[figframe]
+\setupframed[figframe][
+    offset=none,
+    rulethickness=.05em,
+]
+
+\setupunit[language=ru]
+
+\setupunits[method=1]
+
+\setupexternalfigures[directory={../figures, ..}]
+
+\setuplanguage[ru][patterns={ru,gb}]
+\mainlanguage[ru]
+\setuplabeltext[ru][appendix=Приложение~]
+
+\definefloat[codelisting][codelistings]
+\setuplabeltext[ru][codelisting=Листинг ]
+\setuplabeltext[ru][continued={~(прод.)}]
+\setupfloatsplitting[before=, after=, inbetween=, conversion=continued]
+\setupcaptions[align={width, tolerant, fullhz, hanging}, headstyle=\rm, style=\setupinterlinespace[line=2.8ex], numbercommand=\corpstyle, headseparator={ --- }, distance=0pt]
+\setupcaption[codelisting][location=top]
+\setupcaption[figure][align={last, tolerant, fullhz, hanging}]
+\setupcaption[table][location=top]
+
+\setupitemgroup[itemize][each][intext, packed]
+\setupitemgroup[itemize][alignsymbol=yes, indenting=\defaultparindent]
+
+\placebookmarks[chapter, title, pagechapter, pagetitle, appendixchapter, section, subsection]
+\setupcaptions[way=bytext, prefix=no]%, prefixsegments=chapter:section]
+\setupformulae[way=bytext, prefix=no]
+
+\definepapersize[main][A4]
+\definepapersize[big][A3]
+\definepapersize[large][A2]
+
+\setuppapersize[main]
+\definelayout[main][
+    backspace=30mm, topspace=20mm,
+    top=0mm, edge=0mm, bottom=0mm,
+    header=0mm, footer=\lineheight, footerdistance=10mm,
+    leftmargin=20mm, rightmargin=10mm, margindistance=5mm,
+    width=fit, height=fit,
+]
+\setuplayout[main]
+
+\setupsectionblock[frontpart][
+    number=yes,
+]
+
+\setupindenting[yes, \defaultparindent, first]
+
+\setuplist[alternative=c, style=\feature[+]{opnum}]
+\setuplist[chapter, pagechapter, title, pagetitle, appendixchapter][numberstyle=\tfa\titlecapsstyle, textstyle=\tfa\titlecapsstyle]
+\setuplist[section][numberstyle=\titlecapsstyle]
+
+\setupheadtext[content=Содержание]
+
+\setupheads[aftersection=\placefloats]
+\setuphead[chapter][
+    align=middle,
+    style=\titlecapsstyle\bfb,
+    distance=1em,
+    indentnext=yes,
+    page=no,
+    before=\blank[big],
+    after=\blank[line],
+]
+\definehead[pagechapter][chapter][
+    page=yes,
+]
+\definehead[appendixchapter][pagechapter][
+    conversion=A,
+    alternative=middle,
+]
+\setuphead[title][
+    incrementnumber=list,
+]
+\definehead[pagetitle][title][
+    page=yes,
+]
+\setuphead[section][
+    style=\bf,
+    numberstyle=\hskip\defaultparindent,
+    alternative=paragraph,
+    align=flushleft,
+    aligntitle=yes,
+    distance=1em,
+    indentnext=yes,
+    before=\blank[big],
+    after=\blank[medium],
+]
+\setuphead[subsection][
+    style=\bf,
+    numberstyle=\hskip\defaultparindent,
+    alternative=paragraph,
+    align=flushleft,
+    aligntitle=yes,
+    distance=1em,
+    indentnext=yes,
+]
+\setupcombinedlist[content][list={chapter, pagechapter, appendixchapter, title, pagetitle, section}]
+
+\definelayout[titlepage][
+    backspace=30mm, topspace=20mm,
+    top=0mm, edge=0mm, bottom=0mm,
+    header=0mm, footer=0mm, footerdistance=0mm,
+    leftmargin=20mm, rightmargin=10mm, margindistance=5mm,
+    width=fit, height=fit,
+]
+\definemakeup[titlepage][align={last, fullhz, hanging}, pagestate=start]
+
+\startbuffer[titlepagebuf]
+    \starttitlepagemakeup
+        \setbox0=\vbox{%
+            Бюджетное учреждение высшего образования\blank[none]
+            Ханты-Мансийского автономного округа–Югры\blank[none]
+            \quotation{Сургутский государственный университет}%
+        }%
+        \vskip \dimexpr 0.5\ht0 + 0.5\dp0
+        \vbox to 0pt{\vss\unvbox0\vss}%
+        \vfill
+        \vbox to 0pt{%
+            \vss
+            \starttitlecaps\tfa
+            Отчёт\blank[small]
+            по лабораторной работе №\documentvariable{lab:number}\blank[none]
+            по теме: \quotation{\documentvariable{lab:topic}}\blank[none]
+            по дисциплине: \quotation{\documentvariable{lab:subject}}
+            \stoptitlecaps
+            \vss
+        }%
+        \vfill
+        \vbox to 0pt{%
+            \vss
+            \startalignment[flushleft]
+            Выполнил: студент группы 605-11,\blank[none]
+            \documentvariable{lab:author}\blank[small]
+            Принял: старший преподаватель кафедры \abbr{АиКС},\blank[none]
+            \documentvariable{lab:reviewer}
+            \stopalignment
+            \vss
+        }%
+        \vfill
+        \setbox0=\vbox{%
+            Сургут \the\year%
+        }%
+        \vbox to 0pt{\vss\unvcopy0\vss}%
+        \vskip \dimexpr 0.5\ht0 + 0.5\dp0
+    \stoptitlepagemakeup
+\stopbuffer
+
+\setupdocument[
+    metadata:title=Лабораторная работа №\documentvariable{lab:number}. \documentvariable{lab:topic},
+    metadata:author=\documentvariable{lab:author},
+    metadata:subject=\documentvariable{lab:subject},
+]
+
+\startsetups document:start
+\getbuffer[titlepagebuf]
+\stopsetups
+
+\stopenvironment

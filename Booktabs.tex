@@ -1,0 +1,195 @@
+\startenvironment Booktabs
+
+\startuseMPgraphic{toprule}
+
+path upper_rule ;
+numeric upper_thickness ;
+numeric rule_sep ;
+
+upper_thickness := \frameddimension{toprulethickness} ; % get width from a parameter given to \framed
+rule_sep := -upper_thickness/2 ;
+upper_rule := topboundary OverlayBox shifted (0, rule_sep); % top boundary of the cell, right above the top offset
+
+draw upper_rule withpen pensquare scaled upper_thickness ; % draw the top boundary with a square pen of given width
+clip currentpicture to OverlayBox ; % the rule will poke out a little on the sides, so we clip the drawn rule
+
+setbounds currentpicture to OverlayBox ; % finally, set picture bounds to the box's bounds
+
+\stopuseMPgraphic
+
+\startuseMPgraphic{bottomrule}
+
+path lower_rule ;
+numeric lower_thickness ;
+numeric rule_sep ;
+
+lower_thickness := \frameddimension{bottomrulethickness} ;
+rule_sep := lower_thickness/2 ;
+lower_rule := bottomboundary OverlayBox shifted (0, rule_sep) ;
+
+draw lower_rule withpen pensquare scaled lower_thickness ;
+clip currentpicture to OverlayBox ;
+
+setbounds currentpicture to OverlayBox ;
+
+\stopuseMPgraphic
+
+\startuseMPgraphic{midruleabove}
+
+path upper_rule ;
+numeric upper_thickness ;
+numeric rule_sep ;
+
+upper_thickness := \frameddimension{midrulethickness} ;
+rule_sep := -\frameddimension{abovespace} - upper_thickness/2 ;
+upper_rule := topboundary OverlayBox shifted (0, rule_sep) ;
+
+draw upper_rule withpen pensquare scaled upper_thickness ;
+clip currentpicture to OverlayBox ;
+
+setbounds currentpicture to OverlayBox ;
+
+\stopuseMPgraphic
+
+\startuseMPgraphic{midrule}
+
+path center_rule ;
+numeric center_thickness ;
+
+center_thickness := \frameddimension{midrulethickness} ;
+center_rule := center leftboundary OverlayBox -- origin -- center rightboundary OverlayBox ;
+
+draw center_rule withpen pensquare scaled center_thickness ;
+clip currentpicture to OverlayBox ;
+
+setbounds currentpicture to OverlayBox ;
+
+\stopuseMPgraphic
+
+\startuseMPgraphic{midrulebelow}
+
+path lower_rule ;
+numeric lower_thickness ;
+numeric rule_sep ;
+
+lower_thickness := \frameddimension{midrulethickness} ;
+rule_sep := \frameddimension{belowspace} + lower_thickness/2 ;
+lower_rule := bottomboundary OverlayBox shifted (0, rule_sep) ;
+
+draw lower_rule withpen pensquare scaled lower_thickness ;
+clip currentpicture to OverlayBox ;
+
+setbounds currentpicture to OverlayBox ; % finally, set picture bounds to the box's bounds
+
+\stopuseMPgraphic
+
+\startuseMPgraphic{cmidruleabove}
+
+path upper_rule ;
+numeric upper_thickness ;
+numeric rule_sep ;
+numeric rule_kerns[] ;
+
+rule_kerns[1] := \frameddimension{cmidrulekernleft} ;
+rule_kerns[2] := -\frameddimension{cmidrulekernright} ;
+upper_thickness := \frameddimension{cmidrulethickness} ;
+rule_sep := -\frameddimension{abovespace} - upper_thickness/2 ;
+upper_rule := (ulcorner OverlayBox shifted (rule_kerns[1], 0) -- urcorner OverlayBox shifted (rule_kerns[2], 0)) shifted (0, rule_sep) ;
+
+draw upper_rule withpen pensquare scaled upper_thickness ;
+clip currentpicture to OverlayBox ;
+
+setbounds currentpicture to OverlayBox ;
+
+\stopuseMPgraphic
+
+\startuseMPgraphic{cmidrulebelow}
+
+path lower_rule ;
+numeric lower_thickness ;
+numeric rule_sep ;
+numeric rule_kerns[] ;
+
+rule_kerns[1] := \frameddimension{cmidrulekernleft} ;
+rule_kerns[2] := -\frameddimension{cmidrulekernright} ;
+lower_thickness := \frameddimension{cmidrulethickness} ;
+rule_sep := \frameddimension{belowspace} + lower_thickness/2 ;
+lower_rule := (llcorner OverlayBox shifted (rule_kerns[1], 0) -- lrcorner OverlayBox shifted (rule_kerns[2], 0)) shifted (0, rule_sep) ;
+
+draw lower_rule withpen pensquare scaled lower_thickness ;
+clip currentpicture to OverlayBox ;
+
+setbounds currentpicture to OverlayBox ; % finally, set picture bounds to the box's bounds
+
+\stopuseMPgraphic
+
+\defineoverlay[toprule][\useMPgraphic{toprule}]
+\defineoverlay[bottomrule][\useMPgraphic{bottomrule}]
+\defineoverlay[midrule][\useMPgraphic{midrulebelow}]
+\defineoverlay[midruleabove][\useMPgraphic{midruleabove}]
+\defineoverlay[midrulebelow][\useMPgraphic{midrulebelow}]
+\defineoverlay[cmidrule][\useMPgraphic{cmidrulebelow}]
+\defineoverlay[cmidruleabove][\useMPgraphic{cmidruleabove}]
+\defineoverlay[cmidrulebelow][\useMPgraphic{cmidrulebelow}]
+
+\startsetups booktabs
+    \setupinterlinespace[line=2.8ex]
+\stopsetups
+
+\definextable[booktabs]
+\setupxtable[booktabs][
+    frame=off,
+    rulethickness=0pt,
+    offset=0pt,
+    setups=booktabs,
+    bodyfont=x,
+    columndistance=1em,
+    heavyrulewidth=.08em,
+    lightrulewidth=.05em,
+    cmidrulewidth=.03em,
+    toprulethickness=\frameddimension{heavyrulewidth},
+    bottomrulethickness=\frameddimension{heavyrulewidth},
+    midrulethickness=\frameddimension{lightrulewidth},
+    cmidrulethickness=\frameddimension{cmidrulewidth},
+    cmidrulekern=.5em,
+    cmidrulekernleft=0pt,
+    cmidrulekernright=0pt,
+    aboverulesep=.4ex,
+    belowrulesep=.65ex,
+    defaultaddspace=.5em,
+    addlinespace=\frameddimension{defaultaddspace},
+    abovespace=\frameddimension{aboverulesep},
+    belowspace=\frameddimension{belowrulesep},
+]
+
+\definextable[booktabs:toprule][booktabs]
+\setupxtable[booktabs:toprule][
+    background=toprule,
+    toffset=\dimexpr\frameddimension{belowspace} + \frameddimension{toprulethickness},
+]
+
+\definextable[booktabs:bottomrule][booktabs]
+\setupxtable[booktabs:bottomrule][
+    background=bottomrule,
+    boffset=\dimexpr\frameddimension{abovespace} + \frameddimension{bottomrulethickness},
+]
+
+\definextable[booktabs:midrule][booktabs]
+\setupxtable[booktabs:midrule][
+    background=midrule,
+    toffset=\dimexpr\frameddimension{abovespace} + \frameddimension{midrulethickness}/2,
+    boffset=\dimexpr\frameddimension{belowspace} + \frameddimension{midrulethickness}/2,
+]
+
+\definextable[booktabs:cmidrule][booktabs]
+\setupxtable[booktabs:cmidrule][
+    background=cmidrule,
+    toffset=\dimexpr\frameddimension{abovespace} + \frameddimension{cmidrulethickness}/2,
+    boffset=\dimexpr\frameddimension{belowspace} + \frameddimension{cmidrulethickness}/2,
+]
+\definextable[booktabs:addlinespace[booktabs]
+\setupxtable[booktabs:addlinespace][
+    boffset=\frameddimension{addlinespace},
+]
+
+\stopenvironment

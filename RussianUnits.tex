@@ -1,0 +1,338 @@
+\startenvironment RussianUnits
+
+% operator: per
+\registerunit[operator][в=/]
+\registerunit[operator][делить на=/]
+
+% prefixes
+\registerunit[prefix][кило=\text{к}]
+\registerunit[prefix][к=\text{к}]
+\registerunit[prefix][милли=\text{м}]
+\registerunit[prefix][м=\text{м}]
+\registerunit[prefix][деци=\text{д}]
+\registerunit[prefix][д=\text{д}]
+\registerunit[prefix][мега=\text{М}]
+\registerunit[prefix][М=\text{М}]
+
+% squared
+\registerunit[suffix][в квадрате=2]
+% === plural ===
+\registerunit[suffix][квадратные=2]
+\registerunit[suffix][квадратных=2]
+\registerunit[suffix][квадратным=2]
+\registerunit[suffix][квадратными=2]
+% --- case specific ---
+% === male ===
+\registerunit[suffix][квадратный=2]
+\registerunit[suffix][квадратного=2]
+\registerunit[suffix][квадратному=2]
+\registerunit[suffix][квадратным=2]
+\registerunit[suffix][квадратном=2]
+% === neuter ===
+\registerunit[suffix][квадратное=2]
+% === female ===
+\registerunit[suffix][квадратная=2]
+\registerunit[suffix][квадратной=2]
+\registerunit[suffix][квадратную=2]
+\registerunit[suffix][квадратною=2]
+
+% cubed
+\registerunit[suffix][в кубе=3]
+% === plural ===
+\registerunit[suffix][кубические=3]
+\registerunit[suffix][кубических=3]
+\registerunit[suffix][кубическим=3]
+\registerunit[suffix][кубическими=3]
+% --- case specific ---
+% === male ===
+\registerunit[suffix][кубический=3]
+\registerunit[suffix][кубического=3]
+\registerunit[suffix][кубическому=3]
+\registerunit[suffix][кубическим=3]
+\registerunit[suffix][кубическом=3]
+% === neuter ===
+\registerunit[suffix][кубическое=3]
+% === female ===
+\registerunit[suffix][кубическая=3]
+\registerunit[suffix][кубической=3]
+\registerunit[suffix][кубическую=3]
+\registerunit[suffix][кубическою=3]
+
+% metres
+% --- shortened ---
+\registerunit[unit][м=\text{м}]
+% --- case specific ---
+\registerunit[unit][метр=\text{м}]
+\registerunit[unit][метра=\text{м}]
+\registerunit[unit][метру=\text{м}]
+\registerunit[unit][метром=\text{м}]
+\registerunit[unit][метре=\text{м}]
+\registerunit[unit][метры=\text{м}]
+\registerunit[unit][метров=\text{м}]
+\registerunit[unit][метрам=\text{м}]
+\registerunit[unit][метрами=\text{м}]
+\registerunit[unit][метрах=\text{м}]
+
+% seconds
+% --- shortened ---
+\registerunit[unit][с=\text{с}]
+\registerunit[unit][сек=\text{с}]
+% --- case specific ---
+\registerunit[unit][секунда=\text{с}] % singular, nominative
+\registerunit[unit][секунде=\text{с}] % singular, dative/prepositional
+\registerunit[unit][секунду=\text{с}] % singular, accusative
+\registerunit[unit][секундой=\text{с}] % singular, instrumental
+\registerunit[unit][секундами=\text{с}] % plural, instrumental
+\registerunit[unit][секундах=\text{с}] % plural, prepositional
+\registerunit[unit][секундам=\text{с}] % plural, dative
+\registerunit[unit][секунды=\text{с}] % plural, nominative / singular, genitive / plural, accusative
+\registerunit[unit][секунд=\text{с}] % plural, genitive
+
+% degrees
+% --- shortened ---
+\registerunit[symbol][град=°]
+% --- case specific ---
+\registerunit[symbol][градус=°]
+\registerunit[symbol][градусы=°]
+\registerunit[symbol][градуса=°]
+\registerunit[symbol][градусов=°]
+\registerunit[symbol][градусу=°]
+\registerunit[symbol][градусам=°]
+\registerunit[symbol][градусом=°]
+\registerunit[symbol][градусами=°]
+\registerunit[symbol][градусе=°]
+\registerunit[symbol][градусах=°]
+
+% bits
+% --- shortened ---
+\registerunit[unit][б=\text{б}]
+% --- case specific ---
+\registerunit[unit][бит=\text{б}]
+\registerunit[unit][бита=\text{б}]
+\registerunit[unit][биту=\text{б}]
+\registerunit[unit][битом=\text{б}]
+\registerunit[unit][бите=\text{б}]
+\registerunit[unit][биты=\text{б}]
+\registerunit[unit][битов=\text{б}]
+\registerunit[unit][битам=\text{б}]
+\registerunit[unit][битами=\text{б}]
+\registerunit[unit][битах=\text{б}]
+
+% bytes
+% --- shortened ---
+\registerunit[unit][Б=\text{Б}]
+% --- case specific ---
+\registerunit[unit][байт=\text{Б}]
+\registerunit[unit][байта=\text{Б}]
+\registerunit[unit][байту=\text{Б}]
+\registerunit[unit][байтом=\text{Б}]
+\registerunit[unit][байте=\text{Б}]
+\registerunit[unit][байты=\text{Б}]
+\registerunit[unit][байтов=\text{Б}]
+\registerunit[unit][байтам=\text{Б}]
+\registerunit[unit][байты=\text{Б}]
+\registerunit[unit][байтами=\text{Б}]
+\registerunit[unit][байтах=\text{Б}]
+
+% bels
+% --- shortened ---
+\registerunit[unit][Б=\text{Б}]
+% --- case specific ---
+\registerunit[unit][бел=\text{Б}]
+\registerunit[unit][белы=\text{Б}]
+\registerunit[unit][бела=\text{Б}]
+\registerunit[unit][белов=\text{Б}]
+\registerunit[unit][белу=\text{Б}]
+\registerunit[unit][белам=\text{Б}]
+\registerunit[unit][белом=\text{Б}]
+\registerunit[unit][белами=\text{Б}]
+\registerunit[unit][беле=\text{Б}]
+\registerunit[unit][белах=\text{Б}]
+
+% hertz
+% --- shortened ---
+\registerunit[unit][Гц=\text{Гц}]
+% --- case specific ---
+\registerunit[unit][герц=\text{Гц}]
+\registerunit[unit][герца=\text{Гц}]
+\registerunit[unit][герцу=\text{Гц}]
+\registerunit[unit][герцем=\text{Гц}]
+\registerunit[unit][герце=\text{Гц}]
+\registerunit[unit][герцы=\text{Гц}]
+\registerunit[unit][герцев=\text{Гц}]
+\registerunit[unit][герцам=\text{Гц}]
+\registerunit[unit][герцами=\text{Гц}]
+\registerunit[unit][герцах=\text{Гц}]
+
+% radian
+% --- shortened ---
+\registerunit[unit][рад=\text{рад}]
+% --- case specific ---
+\registerunit[unit][радиан=\text{рад}]
+\registerunit[unit][радианы=\text{рад}]
+\registerunit[unit][радиана=\text{рад}]
+\registerunit[unit][радианов=\text{рад}]
+\registerunit[unit][радиану=\text{рад}]
+\registerunit[unit][радианам=\text{рад}]
+\registerunit[unit][радианом=\text{рад}]
+\registerunit[unit][радианами=\text{рад}]
+\registerunit[unit][радиане=\text{рад}]
+\registerunit[unit][радианах=\text{рад}]
+
+% percent
+% --- case specific ---
+\registerunit[symbol][процент=\%]
+\registerunit[symbol][проценты=\%]
+\registerunit[symbol][процента=\%]
+\registerunit[symbol][процентов=\%]
+\registerunit[symbol][проценту=\%]
+\registerunit[symbol][процентам=\%]
+\registerunit[symbol][процентом=\%]
+\registerunit[symbol][процентами=\%]
+\registerunit[symbol][проценте=\%]
+\registerunit[symbol][процентах=\%]
+
+% baud
+% --- case specific ---
+\registerunit[unit][бод=\text{бод}]
+\registerunit[unit][боды=\text{бод}]
+\registerunit[unit][бода=\text{бод}]
+\registerunit[unit][боду=\text{бод}]
+\registerunit[unit][бодам=\text{бод}]
+\registerunit[unit][бодом=\text{бод}]
+\registerunit[unit][бодами=\text{бод}]
+\registerunit[unit][боде=\text{бод}]
+\registerunit[unit][бодах=\text{бод}]
+
+% volt
+\registerunit[unit][В=\text{В}]
+% --- case specific ---
+\registerunit[unit][вольт=\text{В}]
+\registerunit[unit][вольты=\text{В}]
+\registerunit[unit][вольта=\text{В}]
+\registerunit[unit][вольту=\text{В}]
+\registerunit[unit][вольтам=\text{В}]
+\registerunit[unit][вольтом=\text{В}]
+\registerunit[unit][вольтами=\text{В}]
+\registerunit[unit][вольте=\text{В}]
+\registerunit[unit][вольтах=\text{В}]
+
+% gram
+\registerunit[unit][г=\text{г}]
+% --- case specific ---
+\registerunit[unit][грамм=\text{г}]
+\registerunit[unit][граммы=\text{г}]
+\registerunit[unit][грамма=\text{г}]
+\registerunit[unit][граммов=\text{г}]
+\registerunit[unit][грамму=\text{г}]
+\registerunit[unit][граммам=\text{г}]
+\registerunit[unit][граммом=\text{г}]
+\registerunit[unit][граммами=\text{г}]
+\registerunit[unit][грамме=\text{г}]
+\registerunit[unit][граммах=\text{г}]
+
+% newton
+\registerunit[unit][Н=\text{Н}]
+% --- case specific ---
+\registerunit[unit][ньютон=\text{Н}]
+\registerunit[unit][ньютоны=\text{Н}]
+\registerunit[unit][ньютона=\text{Н}]
+\registerunit[unit][ньютонов=\text{Н}]
+\registerunit[unit][ньютону=\text{Н}]
+\registerunit[unit][ньютонам=\text{Н}]
+\registerunit[unit][ньютоном=\text{Н}]
+\registerunit[unit][ньютонами=\text{Н}]
+\registerunit[unit][ньютоне=\text{Н}]
+\registerunit[unit][ньютонах=\text{Н}]
+
+% ampere
+\registerunit[unit][А=\text{А}]
+% --- case specific ---
+\registerunit[unit][ампер=\text{А}]
+\registerunit[unit][амперы=\text{А}]
+\registerunit[unit][ампера=\text{А}]
+\registerunit[unit][ампер=\text{А}]
+\registerunit[unit][амперу=\text{А}]
+\registerunit[unit][амперам=\text{А}]
+\registerunit[unit][ампером=\text{А}]
+\registerunit[unit][амперами=\text{А}]
+\registerunit[unit][ампере=\text{А}]
+\registerunit[unit][амперах=\text{А}]
+
+% minute
+\registerunit[unit][мин=\text{мин}]
+% --- case specific ---
+\registerunit[unit][минута=\text{мин}]
+\registerunit[unit][минуты=\text{мин}]
+\registerunit[unit][минут=\text{мин}]
+\registerunit[unit][минуте=\text{мин}]
+\registerunit[unit][минутам=\text{мин}]
+\registerunit[unit][минуту=\text{мин}]
+\registerunit[unit][минутой=\text{мин}]
+\registerunit[unit][минутами=\text{мин}]
+\registerunit[unit][минутах=\text{мин}]
+
+% hour
+\registerunit[unit][ч=\text{ч}]
+% --- case specific ---
+\registerunit[unit][час=\text{ч}]
+\registerunit[unit][часы=\text{ч}]
+\registerunit[unit][часа=\text{ч}]
+\registerunit[unit][часов=\text{ч}]
+\registerunit[unit][часу=\text{ч}]
+\registerunit[unit][часам=\text{ч}]
+\registerunit[unit][часом=\text{ч}]
+\registerunit[unit][часами=\text{ч}]
+\registerunit[unit][часе=\text{ч}]
+\registerunit[unit][часах=\text{ч}]
+
+% ohm
+\registerunit[unit][Ом=\text{Ом}]
+% --- case specific ---
+\registerunit[unit][ом=\text{Ом}]
+\registerunit[unit][омы=\text{Ом}]
+\registerunit[unit][ома=\text{Ом}]
+\registerunit[unit][омов=\text{Ом}]
+\registerunit[unit][ома=\text{Ом}]
+
+% minute of angle, arc minute (MOA)
+% --- case specific ---
+\registerunit[symbol][угловая минута=′]
+\registerunit[symbol][угловой минуты=′]
+\registerunit[symbol][угловых минут=′]
+\registerunit[symbol][угловой минуте=′]
+\registerunit[symbol][угловым минутам=′]
+\registerunit[symbol][угловую минуту=′]
+\registerunit[symbol][угловой минутой=′]
+\registerunit[symbol][угловыми минутами=′]
+\registerunit[symbol][угловых минутах=′]
+
+% watt
+\registerunit[unit][Вт=\text{Вт}]
+% --- case specific ---
+\registerunit[unit][ватт=\text{Вт}]
+\registerunit[unit][ватты=\text{Вт}]
+\registerunit[unit][ватта=\text{Вт}]
+\registerunit[unit][ватт=\text{Вт}]
+\registerunit[unit][ватту=\text{Вт}]
+\registerunit[unit][ваттам=\text{Вт}]
+\registerunit[unit][ваттом=\text{Вт}]
+\registerunit[unit][ваттами=\text{Вт}]
+\registerunit[unit][ватте=\text{Вт}]
+\registerunit[unit][ваттах=\text{Вт}]
+
+% turn (= 2 pi radians)
+\registerunit[unit][об.=\text{об.}]
+% --- case specific ---
+\registerunit[unit][оборот=\text{об.}]
+\registerunit[unit][обороты=\text{об.}]
+\registerunit[unit][оборота=\text{об.}]
+\registerunit[unit][оборотов=\text{об.}]
+\registerunit[unit][обороту=\text{об.}]
+\registerunit[unit][оборотам=\text{об.}]
+\registerunit[unit][оборотом=\text{об.}]
+\registerunit[unit][оборотами=\text{об.}]
+\registerunit[unit][обороте=\text{об.}]
+\registerunit[unit][оборотах=\text{об.}]
+
+\stopenvironment

@@ -1,0 +1,82 @@
+\startenvironment ControlSystems
+
+\usemodule[tikz]
+\usemodule[pgfplots]
+\usetikzlibrary[backgrounds, decorations.markings]
+\usetikzlibrary[shapes.geometric, positioning, intersections, calc]
+%\usepgfplotslibrary[external]
+%\tikzexternalize
+
+\tikzset{
+    /pgf/number format/set decimal separator={\hbox{,}},
+    /pgf/number format/set thousands separator={\,},
+    system split/.style={anchor=mid, node distance = 4ex and 1.5em},
+    thick outline/.style={line width=.15em},
+    thin outline/.style={line width=.1em},
+    shift up baseline/.style={yshift=1.25ex},
+    shift down baseline/.style={yshift=-1.25ex},
+    shift right/.style={xshift=1em},
+    shift left/.style={xshift=-1em},
+    system node/.style={
+        system split, thick outline, rectangle, draw, minimum width = 2.5em,
+        minimum height = 7.5ex, inner sep = .5em,
+    },
+    system edge/.style={thick outline},
+    system sum/.style={
+        system split, thin outline, circle, draw, minimum size=2em, inner
+        sep=0pt, path picture={
+            \draw[black]
+            (path picture bounding box.south east) -- (path picture bounding
+            box.north west)
+            (path picture bounding box.south west) -- (path picture bounding
+            box.north east);
+        }
+    },
+    small dot/.style={circle, radius=.4ex},
+}
+
+\pgfplotsset{
+    compat=1.18,
+    width=\textwidth,
+    axis lines=left,
+    axis line style={|->, thick},
+    enlargelimits=false,
+    every axis legend/.append style={cells={anchor=mid west, font=\tfxx, inner sep=.5ex, text height=.6\strutheight, text depth=.6\strutdepth}},
+    every axis plot/.append style={line width=.1em},
+    table/search path={.,../data},
+}
+
+%\usemodule[chart]
+%\setupFLOWlines[
+%    corner=rectangular,
+%    color=black,
+%    rulethickness=.12em,
+%]
+%\setupFLOWshapes[
+%    framecolor=black,
+%    backgroundcolor=white,
+%    rulethickness=.12em,
+%]
+%\setupFLOWcharts[
+%    width=8em,
+%    height=10ex,
+%    dx=1em,
+%    dy=3ex,
+%]
+
+\usemodule[vim]
+\setupvimtyping[vimcommand=nvim]
+\definevimtyping[maxima][
+    syntax=maxima,
+    directory=../code-output,
+    lines=split,
+    option={packed, hyphenated},
+]
+\definevimtyping[scilab][
+    syntax=scilab,
+    directory=../code-output,
+    lines=split,
+    option={packed, hyphenated},
+]
+
+\stopenvironment

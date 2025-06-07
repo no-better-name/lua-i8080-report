@@ -1,0 +1,121 @@
+\startenvironment SevenSegment
+\environment PLC
+
+\usemodule[tikz]
+\usetikzlibrary[arrows.meta, calc]
+
+\startluacode
+    seven_segment = seven_segment or {}
+
+    function seven_segment.make_display(glyphs, node_font)
+        -- context.startframed({align="middle", frame="no"})
+        tex.print(string.format(
+        "\\starttikzpicture[baseline=(base), segment/.style={radius=.25ex, Triangle Cap-Triangle Cap, line width=.25ex, shorten <=.125ex, shorten >=.125ex}, faded/.style={black!10}, every node/.append style={font=%s}]",
+        node_font
+        ))
+
+        tex.print("\\coordinate (segdown) at (0, -2ex);")
+        tex.print("\\coordinate (base) at (0, -4ex);")
+    
+        local shift = 0x00
+    
+        for _, item in ipairs(glyphs) do
+            local faded
+            tex.print(string.format(
+               "\\startscope[anchor = east, xshift = %gex]",
+               3.5 * shift
+            ))
+            tex.print("\\coordinate[below right=.25ex, anchor=north west] (dot) at (2ex, -4ex);")
+
+            if item["num"] & 0x01 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (0, 0) -- node[black, above] {\\asm{%.2XH}} (2ex, 0);",
+                faded,
+                item["num"]
+            ))
+
+            if item["num"] & 0x02 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (2ex, 0) -- ++(0, -2ex);",
+                faded
+            ))
+
+            if item["num"] & 0x04 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (2ex, -2ex) -- ++(0, -2ex);",
+                faded
+            ))
+
+            if item["num"] & 0x08 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (2ex, -4ex) -- node[black, below] {\\asm{%.4XH}} ++(-2ex, 0);",
+                faded,
+                item["adr"]
+            ))
+
+            if item["num"] & 0x10 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (0, -4ex) -- ++(0, 2ex);",
+                faded
+            ))
+
+            if item["num"] & 0x20 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (0, -2ex) -- ++(0, 2ex);",
+                faded
+            ))
+
+            if item["num"] & 0x40 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\draw[segment, %s] (0, -2ex) -- ++(2ex, 0);",
+                faded
+            ))
+
+            if item["num"] & 0x80 ~= 0 then
+                faded = ""
+            else
+                faded = "faded"
+            end
+            tex.print(string.format(
+                "\\fill[segment, %s] (dot) circle;",
+                faded
+            ))
+
+            shift = shift + 1
+            tex.print("\\stopscope")
+        end
+    
+        tex.print("\\stoptikzpicture")
+        -- context.stopframed()
+    end
+\stopluacode
+
+\stopenvironment

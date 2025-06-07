@@ -1,0 +1,22 @@
+\startenvironment Code.tex
+
+\usemodule[vim]
+\setupvimtyping[
+    vimcommand=nvim,
+    directory=../code,
+    lines=split,
+    option={packed, hyphenated},
+    align={hyphenated},
+    numbering=no,
+    before=\setupinterlinespace[distance=0pt, line=2.5ex]
+]
+\definevimtyping[c][syntax=c]
+\definevimtyping[lua][syntax=lua]
+\definevimtyping[python][syntax=python]
+\definevimtyping[plaintext][syntax=text]
+\definevimtyping[bash][syntax=bash]
+\definevimtyping[contextcode][syntax=context]
+\definevimtyping[rust][syntax=rust]
+\definevimtyping[sql][syntax=sql]
+
+\stopenvironment

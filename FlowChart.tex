@@ -1,0 +1,96 @@
+\startenvironment FlowChart
+
+\usemodule[tikz]
+\usetikzlibrary[shapes, positioning, intersections]
+
+%\def\complexnodebox[#1]#2{%
+%    \vbox{%
+%        \setupalign[verytolerant, lesshyphenation, center, #1]%
+%        #2%
+%    }%
+%}
+%\def\simplenodebox#1{%
+%    \vbox{%
+%        \setupalign[verytolerant, lesshyphenation, center]%
+%        #1%
+%    }%
+%}
+%\definecomplexorsimple\nodebox
+\defineframed[nodebox][
+    align={center},
+    width=max,
+    strut=no,
+    frame=off,
+    offset=0pt,
+    rulethickness=0pt
+]
+
+\tikzset{
+    /pgf/number format/use comma, /pgf/number format/set thousands separator={\,},
+    flowchart terminal/.style={
+        inner xsep=.5em,
+        inner ysep=1ex,
+        flowchart split,
+        draw,
+        rounded rectangle,
+        very thick,
+        text width=8em,
+        minimum height=8ex
+    },
+    flowchart process/.style={
+        inner xsep=.5em,
+        inner ysep=1ex,
+        flowchart split,
+        draw,
+        rectangle,
+        very thick,
+        align=center,
+        text width=8em,
+        minimum height=8ex
+    },
+    flowchart predefined/.style={
+        inner xsep=.5em,
+        inner ysep=1ex,
+        flowchart split,
+        draw,
+        rectangle split,
+        rectangle split horizontal,
+        rectangle split parts=3,
+        every two node part/.style={text width=8em},
+        very thick,
+        align=center,
+        minimum height=8ex
+    },
+    flowchart IO/.style={
+        inner xsep=.5em,
+        inner ysep=1ex,
+        flowchart split,
+        draw,
+        trapezium,
+        trapezium left angle=60,
+        trapezium right angle=120,
+        very thick,
+        align=center,
+        text width=5em,
+        minimum height=8ex
+    },
+    flowchart condition/.style={
+        flowchart split,
+        draw,
+        diamond,
+        aspect=2.5,
+        very thick,
+        align=center,
+        text width=10em,
+        minimum height=10ex
+    },
+    flowchart edge/.style={
+        flowchart split,
+        very thick,
+        line cap=round
+    },
+    flowchart arrow/.style={->},%-{Classical TikZ Rightarrow[length=6pt]}},
+    flowchart split/.style={node distance = 4ex and 4ex},
+}
+
+\stopenvironment

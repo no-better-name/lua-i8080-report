@@ -1,0 +1,1214 @@
+\startenvironment PLC
+
+\startluacode
+
+local lpeg = require "lpeg"
+
+Intel8080 = {}
+Intel8080.assembly = {}
+Intel8080.tokenising = {}
+Intel8080.formatting = {}
+
+Intel8080.assembly.cmd = {
+    NOP  = {
+        {cmd = 0x00, args = {}},
+    },
+    LXI  = {
+        { cmd = 0x01, args = {{register_pair = "B"},  {word = true}}, },
+        { cmd = 0x11, args = {{register_pair = "D"},  {word = true}}, },
+        { cmd = 0x21, args = {{register_pair = "H"},  {word = true}}, },
+        { cmd = 0x31, args = {{register_pair = "SP"}, {word = true}}, },
+    },
+    STAX = {
+        { cmd = 0x02, args = {{register_pair = "B"}}, },
+        { cmd = 0x12, args = {{register_pair = "D"}}, },
+    },
+    INX  = {
+        { cmd = 0x03, args = {{register_pair = "B"}}, },
+        { cmd = 0x13, args = {{register_pair = "D"}}, },
+        { cmd = 0x23, args = {{register_pair = "H"}}, },
+        { cmd = 0x33, args = {{register_pair = "SP"}}, },
+    },
+    INR  = {
+        { cmd = 0x04, args = {{register = "B"}}, },
+        { cmd = 0x14, args = {{register = "D"}}, },
+        { cmd = 0x24, args = {{register = "H"}}, },
+        { cmd = 0x34, args = {{register = "M"}}, },
+        { cmd = 0x0C, args = {{register = "C"}}, },
+        { cmd = 0x1C, args = {{register = "E"}}, },
+        { cmd = 0x2C, args = {{register = "L"}}, },
+        { cmd = 0x3C, args = {{register = "A"}}, },
+    },
+    DCR  = {
+        { cmd = 0x05, args = {{register = "B"}}, },
+        { cmd = 0x15, args = {{register = "D"}}, },
+        { cmd = 0x25, args = {{register = "H"}}, },
+        { cmd = 0x35, args = {{register = "M"}}, },
+        { cmd = 0x0D, args = {{register = "C"}}, },
+        { cmd = 0x1D, args = {{register = "E"}}, },
+        { cmd = 0x2D, args = {{register = "L"}}, },
+        { cmd = 0x3D, args = {{register = "A"}}, },
+    },
+    MVI  = {
+        { cmd = 0x06, args = {{register = "B"}, {byte = true}}, },
+        { cmd = 0x16, args = {{register = "D"}, {byte = true}}, },
+        { cmd = 0x26, args = {{register = "H"}, {byte = true}}, },
+        { cmd = 0x36, args = {{register = "M"}, {byte = true}}, },
+        { cmd = 0x0E, args = {{register = "C"}, {byte = true}}, },
+        { cmd = 0x1E, args = {{register = "E"}, {byte = true}}, },
+        { cmd = 0x2E, args = {{register = "L"}, {byte = true}}, },
+        { cmd = 0x3E, args = {{register = "A"}, {byte = true}}, },
+    },
+    RLC  = {
+        { cmd = 0x07, args = {}, },
+    },
+    DAD  = {
+        { cmd = 0x09, args = {{register_pair = "B"}}, },
+        { cmd = 0x19, args = {{register_pair = "D"}}, },
+        { cmd = 0x29, args = {{register_pair = "H"}}, },
+        { cmd = 0x39, args = {{register_pair = "SP"}}, },
+    },
+    LDAX = {
+        { cmd = 0x0A, args = {{register_pair = "B"}}, },
+        { cmd = 0x1A, args = {{register_pair = "D"}}, },
+    },
+    DCX  = {
+        { cmd = 0x0B, args = {{register_pair = "B"}}, },
+        { cmd = 0x1B, args = {{register_pair = "D"}}, },
+        { cmd = 0x2B, args = {{register_pair = "H"}}, },
+        { cmd = 0x3B, args = {{register_pair = "SP"}}, },
+    },
+    RRC  = {
+        { cmd = 0x0F, args = {}, },
+        cmd = 0x0F,
+    },
+    RAL  = {
+        { cmd = 0x17, args = {}, },
+        cmd = 0x17,
+    },
+    RAR  = {
+        { cmd = 0x1F, args = {}, },
+        cmd = 0x1F,
+    },
+    SHLD = {
+        { cmd = 0x22, args = {{byte = true}}, },
+    },
+    DAA  = {
+        { cmd = 0x27, args = {}, },
+        cmd = 0x27,
+    },
+    CMA  = {
+        { cmd = 0x2F, args = {}, },
+        cmd = 0x2F,
+    },
+    STA  = {
+        { cmd = 0x32, args = {{byte = true}}, },
+    },
+    STC  = {
+        { cmd = 0x37, args = {}, },
+    },
+    LDA  = {
+        { cmd = 0x3A, args = {{byte = true}}, },
+    },
+    CMC  = {
+        { cmd = 0x3F, args = {}, },
+        cmd = 0x3F,
+    },
+    MOV  = {
+        { cmd = 0x40, args = {{register = "B"}, {register = "B"}}, },
+        { cmd = 0x41, args = {{register = "B"}, {register = "C"}}, },
+        { cmd = 0x42, args = {{register = "B"}, {register = "D"}}, },
+        { cmd = 0x43, args = {{register = "B"}, {register = "E"}}, },
+        { cmd = 0x44, args = {{register = "B"}, {register = "H"}}, },
+        { cmd = 0x45, args = {{register = "B"}, {register = "L"}}, },
+        { cmd = 0x46, args = {{register = "B"}, {register = "M"}}, },
+        { cmd = 0x47, args = {{register = "B"}, {register = "A"}}, },
+        { cmd = 0x48, args = {{register = "C"}, {register = "B"}}, },
+        { cmd = 0x49, args = {{register = "C"}, {register = "C"}}, },
+        { cmd = 0x4A, args = {{register = "C"}, {register = "D"}}, },
+        { cmd = 0x4B, args = {{register = "C"}, {register = "E"}}, },
+        { cmd = 0x4C, args = {{register = "C"}, {register = "H"}}, },
+        { cmd = 0x4D, args = {{register = "C"}, {register = "L"}}, },
+        { cmd = 0x4E, args = {{register = "C"}, {register = "M"}}, },
+        { cmd = 0x4F, args = {{register = "C"}, {register = "A"}}, },
+        { cmd = 0x50, args = {{register = "D"}, {register = "B"}}, },
+        { cmd = 0x51, args = {{register = "D"}, {register = "C"}}, },
+        { cmd = 0x52, args = {{register = "D"}, {register = "D"}}, },
+        { cmd = 0x53, args = {{register = "D"}, {register = "E"}}, },
+        { cmd = 0x54, args = {{register = "D"}, {register = "H"}}, },
+        { cmd = 0x55, args = {{register = "D"}, {register = "L"}}, },
+        { cmd = 0x56, args = {{register = "D"}, {register = "M"}}, },
+        { cmd = 0x57, args = {{register = "D"}, {register = "A"}}, },
+        { cmd = 0x58, args = {{register = "E"}, {register = "B"}}, },
+        { cmd = 0x59, args = {{register = "E"}, {register = "C"}}, },
+        { cmd = 0x5A, args = {{register = "E"}, {register = "D"}}, },
+        { cmd = 0x5B, args = {{register = "E"}, {register = "E"}}, },
+        { cmd = 0x5C, args = {{register = "E"}, {register = "H"}}, },
+        { cmd = 0x5D, args = {{register = "E"}, {register = "L"}}, },
+        { cmd = 0x5E, args = {{register = "E"}, {register = "M"}}, },
+        { cmd = 0x5F, args = {{register = "E"}, {register = "A"}}, },
+        { cmd = 0x60, args = {{register = "H"}, {register = "B"}}, },
+        { cmd = 0x61, args = {{register = "H"}, {register = "C"}}, },
+        { cmd = 0x62, args = {{register = "H"}, {register = "D"}}, },
+        { cmd = 0x63, args = {{register = "H"}, {register = "E"}}, },
+        { cmd = 0x64, args = {{register = "H"}, {register = "H"}}, },
+        { cmd = 0x65, args = {{register = "H"}, {register = "L"}}, },
+        { cmd = 0x66, args = {{register = "H"}, {register = "M"}}, },
+        { cmd = 0x67, args = {{register = "H"}, {register = "A"}}, },
+        { cmd = 0x68, args = {{register = "L"}, {register = "B"}}, },
+        { cmd = 0x69, args = {{register = "L"}, {register = "C"}}, },
+        { cmd = 0x6A, args = {{register = "L"}, {register = "D"}}, },
+        { cmd = 0x6B, args = {{register = "L"}, {register = "E"}}, },
+        { cmd = 0x6C, args = {{register = "L"}, {register = "H"}}, },
+        { cmd = 0x6D, args = {{register = "L"}, {register = "L"}}, },
+        { cmd = 0x6E, args = {{register = "L"}, {register = "M"}}, },
+        { cmd = 0x6F, args = {{register = "L"}, {register = "A"}}, },
+        { cmd = 0x70, args = {{register = "M"}, {register = "B"}}, },
+        { cmd = 0x71, args = {{register = "M"}, {register = "C"}}, },
+        { cmd = 0x72, args = {{register = "M"}, {register = "D"}}, },
+        { cmd = 0x73, args = {{register = "M"}, {register = "E"}}, },
+        { cmd = 0x74, args = {{register = "M"}, {register = "H"}}, },
+        { cmd = 0x75, args = {{register = "M"}, {register = "L"}}, },
+        { cmd = 0x76, args = {{register = "M"}, {register = "M"}}, },
+        { cmd = 0x77, args = {{register = "M"}, {register = "A"}}, },
+        { cmd = 0x78, args = {{register = "A"}, {register = "B"}}, },
+        { cmd = 0x79, args = {{register = "A"}, {register = "C"}}, },
+        { cmd = 0x7A, args = {{register = "A"}, {register = "D"}}, },
+        { cmd = 0x7B, args = {{register = "A"}, {register = "E"}}, },
+        { cmd = 0x7C, args = {{register = "A"}, {register = "H"}}, },
+        { cmd = 0x7D, args = {{register = "A"}, {register = "L"}}, },
+        { cmd = 0x7E, args = {{register = "A"}, {register = "M"}}, },
+        { cmd = 0x7F, args = {{register = "A"}, {register = "A"}}, },
+    },
+    HLT  = {
+        {cmd = 0x76, args = {}, },
+    },
+    ADD  = {
+        { cmd = 0x80, args = {{register = "B"}}, },
+        { cmd = 0x81, args = {{register = "C"}}, },
+        { cmd = 0x82, args = {{register = "D"}}, },
+        { cmd = 0x83, args = {{register = "E"}}, },
+        { cmd = 0x84, args = {{register = "H"}}, },
+        { cmd = 0x85, args = {{register = "L"}}, },
+        { cmd = 0x86, args = {{register = "M"}}, },
+        { cmd = 0x87, args = {{register = "A"}}, },
+    },
+    ADC  = {
+        { cmd = 0x88, args = {{register = "B"}}, },
+        { cmd = 0x89, args = {{register = "C"}}, },
+        { cmd = 0x8A, args = {{register = "D"}}, },
+        { cmd = 0x8B, args = {{register = "E"}}, },
+        { cmd = 0x8C, args = {{register = "H"}}, },
+        { cmd = 0x8D, args = {{register = "L"}}, },
+        { cmd = 0x8E, args = {{register = "M"}}, },
+        { cmd = 0x8F, args = {{register = "A"}}, },
+    },
+    SUB  = {
+        { cmd = 0x90, args = {{register = "B"}}, },
+        { cmd = 0x91, args = {{register = "C"}}, },
+        { cmd = 0x92, args = {{register = "D"}}, },
+        { cmd = 0x93, args = {{register = "E"}}, },
+        { cmd = 0x94, args = {{register = "H"}}, },
+        { cmd = 0x95, args = {{register = "L"}}, },
+        { cmd = 0x96, args = {{register = "M"}}, },
+        { cmd = 0x97, args = {{register = "A"}}, },
+    },
+    SBB  = {
+        { cmd = 0x98, args = {{register = "B"}}, },
+        { cmd = 0x99, args = {{register = "C"}}, },
+        { cmd = 0x9A, args = {{register = "D"}}, },
+        { cmd = 0x9B, args = {{register = "E"}}, },
+        { cmd = 0x9C, args = {{register = "H"}}, },
+        { cmd = 0x9D, args = {{register = "L"}}, },
+        { cmd = 0x9E, args = {{register = "M"}}, },
+        { cmd = 0x9F, args = {{register = "A"}}, },
+    },
+    ANA  = {
+        { cmd = 0xA0, args = {{register = "B"}}, },
+        { cmd = 0xA1, args = {{register = "C"}}, },
+        { cmd = 0xA2, args = {{register = "D"}}, },
+        { cmd = 0xA3, args = {{register = "E"}}, },
+        { cmd = 0xA4, args = {{register = "H"}}, },
+        { cmd = 0xA5, args = {{register = "L"}}, },
+        { cmd = 0xA6, args = {{register = "M"}}, },
+        { cmd = 0xA7, args = {{register = "A"}}, },
+    },
+    XRA  = {
+        { cmd = 0xA8, args = {{register = "B"}}, },
+        { cmd = 0xA9, args = {{register = "C"}}, },
+        { cmd = 0xAA, args = {{register = "D"}}, },
+        { cmd = 0xAB, args = {{register = "E"}}, },
+        { cmd = 0xAC, args = {{register = "H"}}, },
+        { cmd = 0xAD, args = {{register = "L"}}, },
+        { cmd = 0xAE, args = {{register = "M"}}, },
+        { cmd = 0xAF, args = {{register = "A"}}, },
+    },
+    ORA  = {
+        { cmd = 0xB0, args = {{register = "B"}}, },
+        { cmd = 0xB1, args = {{register = "C"}}, },
+        { cmd = 0xB2, args = {{register = "D"}}, },
+        { cmd = 0xB3, args = {{register = "E"}}, },
+        { cmd = 0xB4, args = {{register = "H"}}, },
+        { cmd = 0xB5, args = {{register = "L"}}, },
+        { cmd = 0xB6, args = {{register = "M"}}, },
+        { cmd = 0xB7, args = {{register = "A"}}, },
+    },
+    CMP  = {
+        { cmd = 0xB8, args = {{register = "B"}}, },
+        { cmd = 0xB9, args = {{register = "C"}}, },
+        { cmd = 0xBA, args = {{register = "D"}}, },
+        { cmd = 0xBB, args = {{register = "E"}}, },
+        { cmd = 0xBC, args = {{register = "H"}}, },
+        { cmd = 0xBD, args = {{register = "L"}}, },
+        { cmd = 0xBE, args = {{register = "M"}}, },
+        { cmd = 0xBF, args = {{register = "A"}}, },
+    },
+    RNZ  = {
+        { cmd = 0xC0, args = {}, },
+    },
+    POP  = {
+        { cmd = 0xC1, args = {{register_pair = "B"}}, },
+        { cmd = 0xD1, args = {{register_pair = "D"}}, },
+        { cmd = 0xE1, args = {{register_pair = "H"}}, },
+        { cmd = 0xF1, args = {{register_pair = "PSW"}}, },
+    },
+    JNZ  = {
+        { cmd = 0xC2, args = {{word = true}}, },
+    },
+    JMP  = {
+        { cmd = 0xC3, args = {{word = true}}, },
+    },
+    CNZ  = {
+        { cmd = 0xC4, args = {{word = true}}, },
+    },
+    PUSH = {
+        { cmd = 0xC5, args = {{register_pair = "B"}}, },
+        { cmd = 0xD5, args = {{register_pair = "D"}}, },
+        { cmd = 0xE5, args = {{register_pair = "H"}}, },
+        { cmd = 0xF5, args = {{register_pair = "PSW"}}, },
+    },
+    ADI  = {
+        { cmd = 0xC6, args = {{byte = true}}, },
+    },
+    RST  = {
+        {
+            cmd = {
+                [0] = 0xC7,
+                [1] = 0xCF,
+                [2] = 0xD7,
+                [3] = 0xDF,
+                [4] = 0xE7,
+                [5] = 0xEF,
+                [6] = 0xF7,
+                [7] = 0xFF,
+            },
+            args = {{faux = true}},
+        },
+    },
+    RZ   = {
+        { cmd = 0xC8, args = {}, },
+    },
+    RET  = {
+        { cmd = 0xC9, args = {}, },
+    },
+    JZ   = {
+        { cmd = 0xCA, args = {{word = true}}, },
+    },
+    CZ   = {
+        { cmd = 0xCC, args = {{word = true}}, },
+    },
+    CALL = {
+        { cmd = 0xCD, args = {{word = true}}, },
+    },
+    ACI  = {
+        { cmd = 0xCE, args = {{byte = true}}, },
+    },
+    RNC  = {
+        { cmd = 0xD0, args = {}, },
+    },
+    JNC  = {
+        { cmd = 0xD2, args = {{word = true}}, },
+    },
+    OUT  = {
+        { cmd = 0xD3, args = {{byte = true}}, },
+    },
+    CNC  = {
+        { cmd = 0xD4, args = {{word = true}}, },
+    },
+    SUI  = {
+        { cmd = 0xD6, args = {{byte = true}}, },
+    },
+    RC   = {
+        { cmd = 0xD8, args = {}, },
+    },
+    JC   = {
+        { cmd = 0xDA, args = {{word = true}}, },
+    },
+    IN   = {
+        { cmd = 0xDB, args = {{byte = true}}, },
+    },
+    CC   = {
+        { cmd = 0xDC, args = {{word = true}}, },
+    },
+    SBI  = {
+        { cmd = 0xDE, args = {{byte = true}}, },
+    },
+    RPO  = {
+        { cmd = 0xE0, args = {{byte = true}}, },
+    },
+    JPO  = {
+        { cmd = 0xE2, args = {{word = true}}, },
+    },
+    XTHL = {
+        { cmd = 0xE3, args = {}, },
+    },
+    CPO  = {
+        { cmd = 0xE4, args = {{word = true}}, },
+    },
+    ANI  = {
+        { cmd = 0xE6, args = {{byte = true}}, },
+    },
+    RPE  = {
+        { cmd = 0xE8, args = {}, },
+    },
+    PCHL = {
+        { cmd = 0xE9, args = {}, },
+    },
+    JPE  = {
+        { cmd = 0xEA, args = {{word = true}}, },
+    },
+    XCHG = {
+        { cmd = 0xEB, args = {}, },
+    },
+    CPE  = {
+        { cmd = 0xEC, args = {{word = true}}, },
+    },
+    XRI  = {
+        { cmd = 0xEE, args = {{byte = true}}, },
+    },
+    RP   = {
+        { cmd = 0xF0, args = {}, },
+    },
+    JP   = {
+        { cmd = 0xF2, args = {{word = true}}, },
+    },
+    DI   = {
+        { cmd = 0xF3, args = {}, },
+    },
+    CP   = {
+        { cmd = 0xF4, args = {{word = true}}, },
+    },
+    ORI  = {
+        { cmd = 0xF6, args = {{byte = true}}, },
+    },
+    RM   = {
+        { cmd = 0xF8, args = {}, },
+    },
+    SPHL = {
+        { cmd = 0xF9, args = {}, },
+    },
+    JM   = {
+        { cmd = 0xFA, args = {{word = true}}, },
+    },
+    EI   = {
+        { cmd = 0xFB, args = {}, },
+    },
+    CM   = {
+        { cmd = 0xFC, args = {{word = true}}, },
+    },
+    CPI  = {
+        { cmd = 0xFE, args = {{byte = true}}, },
+    },
+}
+
+Intel8080.tokenising.blank = lpeg.S(utf8.char(0x20, 0x09))
+Intel8080.tokenising.arg_sep = lpeg.P ","
+Intel8080.tokenising.label_delim = lpeg.P ":"
+Intel8080.tokenising.comment_delim = lpeg.P ";"
+Intel8080.tokenising.newline = lpeg.P "\n"
+
+Intel8080.tokenising.data = {}
+
+Intel8080.tokenising.data.register = {
+    A = lpeg.Cg((lpeg.P "A" + lpeg.P "a") / string.upper),
+    B = lpeg.Cg((lpeg.P "B" + lpeg.P "b") / string.upper),
+    C = lpeg.Cg((lpeg.P "C" + lpeg.P "c") / string.upper),
+    D = lpeg.Cg((lpeg.P "D" + lpeg.P "d") / string.upper),
+    E = lpeg.Cg((lpeg.P "E" + lpeg.P "e") / string.upper),
+    H = lpeg.Cg((lpeg.P "H" + lpeg.P "h") / string.upper),
+    L = lpeg.Cg((lpeg.P "L" + lpeg.P "l") / string.upper),
+    M = lpeg.Cg((lpeg.P "M" + lpeg.P "m") / string.upper),
+}
+
+Intel8080.tokenising.data.register_pair = {
+    B = lpeg.Cg((lpeg.P "B" + lpeg.P "b") / string.upper),
+    D = lpeg.Cg((lpeg.P "D" + lpeg.P "d") / string.upper),
+    H = lpeg.Cg((lpeg.P "H" + lpeg.P "h") / string.upper),
+
+    SP = lpeg.Cg((lpeg.P "SP" + lpeg.P "sp") / string.upper),
+    PC = lpeg.Cg((lpeg.P "PC" + lpeg.P "pc") / string.upper),
+
+    PSW = lpeg.Cg((lpeg.P "PSW" + lpeg.P "psw") / string.upper),
+}
+
+Intel8080.tokenising.data.numeric = {
+    bin = lpeg.Ct(lpeg.Cg(lpeg.R "01"^1, "value")
+        * lpeg.Cg(lpeg.S "Bb" / "2", "radix")),
+
+    oct = lpeg.Ct(lpeg.Cg(lpeg.R "07"^1, "value")
+        * lpeg.Cg(lpeg.S "OoQq" / "8", "radix")),
+
+    dec = lpeg.Ct(lpeg.Cg(lpeg.R "09"^1, "value")
+        * lpeg.Cg(lpeg.S "Dd"^-1 / "10", "radix")),
+
+    hex = lpeg.Ct(lpeg.Cg(lpeg.R "09"
+        * (lpeg.R "09" + lpeg.R "af" + lpeg.R "AF")^0 / string.upper, "value")
+        * lpeg.Cg(lpeg.S "Hh" / "16", "radix")),
+}
+
+Intel8080.tokenising.data.numeric.to_number = function (num_match)
+    return tonumber(num_match.value, num_match.radix)
+end
+
+Intel8080.tokenising.data.location_counter = lpeg.P "$"
+
+Intel8080.tokenising.data.ascii_literal = lpeg.P "'" * lpeg.Cg((lpeg.P "''" + (lpeg.utfR(0x00, 0x7F) - lpeg.P "'"))^1 /
+    function (str)
+        return str:gsub("''", "'")
+    end
+) * lpeg.P "'"
+
+Intel8080.tokenising.data.label
+    = (lpeg.R("az", "AZ") + lpeg.S "_-" + lpeg.P "@" + lpeg.P "?") * (lpeg.R("az", "AZ", "09") + lpeg.S "_-")^0
+
+Intel8080.tokenising.operation = {
+    OR = (lpeg.P "OR" + lpeg.P "or") / string.upper,
+    XOR = (lpeg.P "XOR" + lpeg.P "xor") / string.upper,
+    AND = (lpeg.P "AND" + lpeg.P "and") / string.upper,
+    NOT = (lpeg.P "NOT" + lpeg.P "not") / string.upper,
+    EQ = (lpeg.P "EQ" + lpeg.P "eq") / string.upper,
+    LT = (lpeg.P "LT" + lpeg.P "lt") / string.upper,
+    LE = (lpeg.P "LE" + lpeg.P "le") / string.upper,
+    GT = (lpeg.P "GT" + lpeg.P "gt") / string.upper,
+    GE = (lpeg.P "GE" + lpeg.P "ge") / string.upper,
+    NE = (lpeg.P "NE" + lpeg.P "ne") / string.upper,
+    MOD = (lpeg.P "MOD" + lpeg.P "mod") / string.upper,
+    SHL = (lpeg.P "SHL" + lpeg.P "shl") / string.upper,
+    SHR = (lpeg.P "SHR" + lpeg.P "shr") / string.upper,
+    HIGH = (lpeg.P "HIGH" + lpeg.P "high") / string.upper,
+    LOW = (lpeg.P "LOW" + lpeg.P "low") / string.upper,
+    PLUS = lpeg.P "+",
+    MINUS = lpeg.P "-",
+    TIMES = lpeg.P "*",
+    DIV = lpeg.P "/",
+}
+
+Intel8080.I = function (tag)
+    return lpeg.P(
+        function (_, i)
+            print(tag, i)
+            return true
+        end
+    )
+end
+
+Intel8080.tokenising.expression = {}
+
+Intel8080.tokenising.expression.flatten = function (expr)
+    if type(expr) == "table" and #expr == 1 then
+        expr = expr[1]
+    end
+    return expr
+end
+
+Intel8080.tokenising.expression.collect = function (expr)
+    if not expr[1] then return expr end
+
+    expr.binary_operations = {}
+    expr.operands = {}
+
+    for key, value in ipairs(expr) do
+        if value.binary_operation then
+            table.insert(expr.binary_operations, value.binary_operation)
+        else
+            table.insert(expr.operands, value)
+        end
+        expr[key] = nil
+    end
+
+    return expr
+end
+
+Intel8080.tokenising.data.expression =
+    lpeg.P {
+        [1] = "expression",
+        expression = lpeg.Ct(
+            lpeg.Cg(lpeg.V "disjunct")
+            * (
+                Intel8080.tokenising.blank^1
+                * lpeg.Ct(lpeg.V "disjunction")
+                * Intel8080.tokenising.blank^1
+                * lpeg.Cg(lpeg.V "disjunct")
+            )^0
+        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+
+        disjunct = lpeg.Ct(
+            lpeg.Cg(lpeg.V "negand")
+            * (
+                Intel8080.tokenising.blank^1
+                * lpeg.Ct(lpeg.V "conjunction")
+                * Intel8080.tokenising.blank^1
+                * lpeg.Cg(lpeg.V "negand")
+            )^0
+        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+
+        negand = lpeg.Ct(
+            lpeg.Cg(lpeg.V "comparison_operand")
+            * (
+                Intel8080.tokenising.blank^1
+                * lpeg.Ct(lpeg.V "comparison")
+                * Intel8080.tokenising.blank^1
+                * lpeg.Cg(lpeg.V "comparison_operand")
+            )^0
+        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+
+        comparison_operand = lpeg.Ct(
+            lpeg.Cg(lpeg.V "factor")
+            * (
+                Intel8080.tokenising.blank^0
+                * lpeg.Ct(lpeg.V "addition")
+                * Intel8080.tokenising.blank^0
+                * lpeg.Cg(lpeg.V "factor")
+            )^0
+        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+
+        factor = lpeg.Ct(
+            lpeg.Cg(lpeg.V "value")
+            * (
+                (
+                    Intel8080.tokenising.blank^0
+                    * lpeg.Ct(lpeg.V "multiplication_symbol")
+                    * Intel8080.tokenising.blank^0
+                    * lpeg.Cg(lpeg.V "value")
+                )
+                +
+                (
+                    Intel8080.tokenising.blank^1
+                    * lpeg.Ct(lpeg.V "multiplication_name")
+                    * Intel8080.tokenising.blank^1
+                    * lpeg.Cg(lpeg.V "value")
+                )
+            )^0
+        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+
+        value = lpeg.Ct(
+            lpeg.Cg(
+                lpeg.Ct(
+                    (
+                        (
+                            lpeg.V "unary_operation_symbol"
+                            * Intel8080.tokenising.blank^0
+                        )
+                        +
+                        (
+                            lpeg.V "unary_operation_name"
+                            * Intel8080.tokenising.blank^1
+                        )
+                    )^0
+                )
+                , "unary_operations"
+            )
+            * (
+                lpeg.V "number"
+                + lpeg.V "loc_counter"
+                + lpeg.V "asm_label"
+                + lpeg.V "ascii_literal"
+                + (
+                    lpeg.P "("
+                    * Intel8080.tokenising.blank^0
+                    * lpeg.Cg(lpeg.V "expression", "expression")
+                    * Intel8080.tokenising.blank^0
+                    * lpeg.P ")"
+                )
+            )
+        ),
+
+        disjunction = lpeg.Cg(Intel8080.tokenising.operation.OR + Intel8080.tokenising.operation.XOR, "binary_operation"),
+        conjunction = lpeg.Cg(Intel8080.tokenising.operation.AND, "binary_operation"),
+        unary_operation_name = lpeg.Cg(
+            Intel8080.tokenising.operation.NOT
+            + Intel8080.tokenising.operation.HIGH
+            + Intel8080.tokenising.operation.LOW
+        ),
+        unary_operation_symbol = lpeg.Cg(
+            Intel8080.tokenising.operation.MINUS
+        ),
+        comparison = lpeg.Cg(
+            Intel8080.tokenising.operation.EQ
+            + Intel8080.tokenising.operation.LT
+            + Intel8080.tokenising.operation.LE
+            + Intel8080.tokenising.operation.GT
+            + Intel8080.tokenising.operation.GE
+            + Intel8080.tokenising.operation.NE
+            , "binary_operation"
+        ),
+        addition = lpeg.Cg(Intel8080.tokenising.operation.PLUS + Intel8080.tokenising.operation.MINUS, "binary_operation"),
+        multiplication_symbol = lpeg.Cg(Intel8080.tokenising.operation.TIMES + Intel8080.tokenising.operation.DIV, "binary_operation"),
+        multiplication_name = lpeg.Cg(Intel8080.tokenising.operation.MOD + Intel8080.tokenising.operation.SHL + Intel8080.tokenising.operation.SHR, "binary_operation"),
+        number = lpeg.Cg(
+            Intel8080.tokenising.data.numeric.bin
+            + Intel8080.tokenising.data.numeric.oct
+            + Intel8080.tokenising.data.numeric.hex
+            + Intel8080.tokenising.data.numeric.dec
+            , "numeric"
+        ),
+        loc_counter = lpeg.Cg(Intel8080.tokenising.data.location_counter, "location_counter"),
+        asm_label = lpeg.Cg(Intel8080.tokenising.data.label, "label"),
+        ascii_literal = lpeg.Cg(Intel8080.tokenising.data.ascii_literal, "ascii"),
+    }
+
+Intel8080.formatting.format_expression = function (expr)
+    local result
+    if not (expr.binary_operations and expr.operands) then
+        result = ""
+        for _, op in ipairs(expr.unary_operations) do
+            result = result .. op
+            if #op ~= 1 then
+                result = result .. " "
+            end
+        end
+
+        if expr.numeric then
+            local radix = {["2"] = "B", ["8"] = "O", ["10"] = "", ["16"] = "H"}
+            result = result .. expr.numeric.value .. radix[expr.numeric.radix]
+        end
+        if expr.location_counter then
+            result = result .. "$"
+        end
+        if expr.label then
+            result = result .. expr.label
+        end
+        if expr.ascii then
+            result = result .. "'" .. expr.ascii:gsub("''", "'") .. "'"
+        end
+        if expr.expression then
+            result = result .. "(" .. Intel8080.formatting.format_expression(expr.expression) .. ")"
+        end
+    else
+        result = Intel8080.formatting.format_expression(expr.operands[1])
+        for i = 1, #expr.binary_operations do
+           result = result .. " " .. expr.binary_operations[i] .. " " .. Intel8080.formatting.format_expression(expr.operands[i + 1])
+        end
+    end
+
+    return result
+end
+
+Intel8080.assembly.to_signed_word = function (val)
+    return ((val + 0x7FFF) & 0xFFFF) - 0x7FFF
+end
+
+Intel8080.assembly.unary_operation = {
+    ["-"] = function (rhs)
+        return Intel8080.assembly.to_signed_word(-rhs)
+    end,
+    ["NOT"] = function (rhs)
+        return Intel8080.assembly.to_signed_word(~rhs)
+    end,
+    ["HIGH"] = function (rhs)
+        return Intel8080.assembly.to_signed_word((rhs & 0xFF00) >> 8)
+    end,
+    ["LOW"] = function (rhs)
+        return Intel8080.assembly.to_signed_word(rhs & 0x00FF)
+    end,
+}
+
+Intel8080.assembly.binary_operation = {
+    ["+"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs + rhs)
+    end,
+    ["-"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs - rhs)
+    end,
+    ["*"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs * rhs)
+    end,
+    ["/"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs // rhs)
+    end,
+    ["MOD"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs % rhs)
+    end,
+    ["SHL"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word((lhs & 0xFFFF) << rhs)
+    end,
+    ["SHR"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word((lhs & 0xFFFF) >> rhs)
+    end,
+    ["EQ"] = function (lhs, rhs)
+        if lhs == rhs then
+            return -0x0001
+        else
+            return 0x0000
+        end
+    end,
+    ["NE"] = function (lhs, rhs)
+        if lhs ~= rhs then
+            return -0x0001
+        else
+            return 0x0000
+        end
+    end,
+    ["LT"] = function (lhs, rhs)
+        if lhs < rhs then
+            return -0x0001
+        else
+            return 0x0000
+        end
+    end,
+    ["LE"] = function (lhs, rhs)
+        if lhs <= rhs then
+            return -0x0001
+        else
+            return 0x0000
+        end
+    end,
+    ["GT"] = function (lhs, rhs)
+        if lhs > rhs then
+            return -0x0001
+        else
+            return 0x0000
+        end
+    end,
+    ["GE"] = function (lhs, rhs)
+        if lhs >= rhs then
+            return -0x0001
+        else
+            return 0x0000
+        end
+    end,
+    ["AND"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs & rhs)
+    end,
+    ["OR"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs | rhs)
+    end,
+    ["XOR"] = function (lhs, rhs)
+        return Intel8080.assembly.to_signed_word(lhs ~ rhs)
+    end,
+}
+
+Intel8080.assembly.evaluate_expression = function (expr, loc_counter, labels)
+    local result
+    if not (expr.binary_operations and expr.operands) then
+        if expr.numeric then
+            result = Intel8080.assembly.to_signed_word(
+                Intel8080.tokenising.data.numeric.to_number(expr.numeric)
+            )
+        end
+        if expr.location_counter then
+            result = Intel8080.assembly.to_signed_word(
+                loc_counter
+            )
+        end
+        if expr.label then
+            result = Intel8080.assembly.to_signed_word(
+                labels[expr.label]
+            )
+        end
+        if expr.ascii then
+            result = {utf8.codepoint(expr.ascii, 1, 2)}
+            result = Intel8080.assembly.to_signed_word(
+                (result[1] << 8) + result[2]
+            )
+        end
+        if expr.expression then
+            result = Intel8080.assembly.to_signed_word(
+                Intel8080.assembly.evaluate_expression(expr.expression, loc_counter, labels)
+            )
+        end
+
+        for i = #expr.unary_operations, 1, -1 do
+            result = Intel8080.assembly.unary_operation[expr.unary_operations[i]](result)
+        end
+    else
+        result = Intel8080.assembly.to_signed_word(
+            Intel8080.assembly.evaluate_expression(expr.operands[1], loc_counter, labels)
+        )
+        for i = 1, #expr.binary_operations do
+            local rhs = Intel8080.assembly.evaluate_expression(expr.operands[i + 1], loc_counter, labels)
+            result = Intel8080.assembly.binary_operation[expr.binary_operations[i]](result, rhs)
+        end
+    end
+
+    return result
+end
+
+Intel8080.tokenising.generate_cmds = function (instructions)
+    local final_result = nil
+
+    for name, contents in pairs(instructions) do
+        local cmd_name = lpeg.Cg(
+            (lpeg.P(string.upper(name)) + lpeg.P(string.lower(name))) / string.upper
+            , "cmd_name"
+        )
+
+        for _, variation_contents in ipairs(contents) do
+            local next_cmd = cmd_name
+            local arg_list = nil
+            local byte_count = 1
+
+            for _, arg_contents in ipairs(variation_contents.args) do
+                local next_arg = nil
+
+                if arg_contents.register then
+                    next_arg = lpeg.Cg(Intel8080.tokenising.data.register[arg_contents.register], "register")
+                    next_arg = lpeg.Ct(next_arg)
+                elseif arg_contents.register_pair then
+                    next_arg = lpeg.Cg(Intel8080.tokenising.data.register_pair[arg_contents.register_pair], "register_pair")
+                    next_arg = lpeg.Ct(next_arg)
+                elseif arg_contents.byte then
+                    next_arg = lpeg.Cg(Intel8080.tokenising.data.expression, "byte")
+                    next_arg = lpeg.Ct(next_arg)
+                    byte_count = byte_count + 1
+                elseif arg_contents.word then
+                    next_arg = lpeg.Cg(Intel8080.tokenising.data.expression, "word")
+                    next_arg = lpeg.Ct(next_arg)
+                    byte_count = byte_count + 2
+                elseif arg_contents.faux then
+                    next_arg = lpeg.Cg(Intel8080.tokenising.data.expression, "faux")
+                    next_arg = lpeg.Ct(next_arg)
+                end
+
+                if arg_list == nil then
+                    arg_list = lpeg.Cg(next_arg)
+                else
+                    arg_list = arg_list * Intel8080.tokenising.blank^0 * Intel8080.tokenising.arg_sep * Intel8080.tokenising.blank^0 * lpeg.Cg(next_arg)
+                end
+            end
+
+            if arg_list then
+                arg_list = lpeg.Cg(lpeg.Ct(arg_list), "args")
+                next_cmd = lpeg.Ct(
+                    next_cmd * Intel8080.tokenising.blank^1 * arg_list
+                )
+            else
+                next_cmd = lpeg.Ct(next_cmd)
+            end
+
+            next_cmd = next_cmd
+                / function (full_cmd)
+                    full_cmd.bytes = {}
+                    for i = 1, byte_count do
+                        full_cmd.bytes[i] = 0
+                    end
+                    full_cmd.bytes[1] = variation_contents.cmd
+                    return full_cmd
+                end
+
+            if final_result == nil then
+                final_result = next_cmd
+            else
+                final_result = final_result + next_cmd
+            end
+        end
+    end
+
+    return final_result
+end
+
+Intel8080.tokenising.cmd = Intel8080.tokenising.generate_cmds(
+    Intel8080.assembly.cmd
+)
+
+Intel8080.tokenising.line = lpeg.P {
+    [1] = "line",
+    line = lpeg.Ct(
+        (
+            Intel8080.tokenising.blank^0
+            * lpeg.V "label"
+            * Intel8080.tokenising.label_delim
+            * Intel8080.tokenising.blank^0
+        )^-1
+        *
+        (
+            Intel8080.tokenising.blank^0
+            * lpeg.V "cmd"
+            * Intel8080.tokenising.blank^0
+        )^-1
+        *
+        (
+            Intel8080.tokenising.blank^0
+            * Intel8080.tokenising.comment_delim
+            * Intel8080.tokenising.blank^0
+            * lpeg.V "comment"
+        )^-1
+    ),
+
+    label = lpeg.Cg(
+        Intel8080.tokenising.data.label, "label"
+    ),
+    cmd = lpeg.Cg(
+        Intel8080.tokenising.cmd, "cmd"
+    ),
+    comment = lpeg.Cg(
+        (lpeg.P(1) - Intel8080.tokenising.newline)^0, "comment"
+    ),
+}
+
+Intel8080.tokenising.listing = lpeg.Ct(
+    Intel8080.tokenising.line * ((Intel8080.tokenising.newline)^1 * Intel8080.tokenising.line)^0
+)
+
+Intel8080.assembly.assemble = function (code, location_counter, labels)
+    local starting_location_counter = location_counter
+    code = Intel8080.tokenising.listing:match(code)
+
+    -- pass 1
+    for _, line in ipairs(code) do
+        if line.label then
+            labels[line.label] = location_counter
+        end
+
+        if line.cmd then
+            location_counter = location_counter + #line.cmd.bytes
+            location_counter = location_counter & 0xFFFF
+        end
+    end
+
+    location_counter = starting_location_counter
+    -- pass 2
+    for _, line in ipairs(code) do
+        line.location_counter = location_counter
+
+        if line.label then
+            labels[line.label] = location_counter
+        end
+
+        if line.cmd then
+            if line.cmd.args then
+                if line.cmd.args[#line.cmd.args].byte then
+                    local val = Intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].byte, location_counter, labels)
+                    line.cmd.bytes[2] = val & 0x00FF
+                elseif line.cmd.args[#line.cmd.args].word then
+                    local val = Intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].word, location_counter, labels)
+                    line.cmd.bytes[2] = val & 0x00FF
+                    line.cmd.bytes[3] = (val & 0xFF00) >> 8
+                elseif line.cmd.args[#line.cmd.args].faux then
+                    local val = Intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].faux, location_counter, labels)
+                    line.cmd.bytes[1] = line.cmd.bytes[1][val]
+                    if line.cmd.bytes[1] == nil then
+                        error("malformed faux argument to " .. line.cmd.cmd_name)
+                    end
+                end
+            end
+
+            location_counter = location_counter + #line.cmd.bytes
+            location_counter = location_counter & 0xFFFF
+        end
+    end
+
+    return code
+end
+
+-- Intel8080.formatting.make_listing = function (state)
+--     local listing = ""
+-- 
+--     for line_no, line in ipairs(state) do
+--         local print_line = string.format("%#x    ", line.location_counter)
+-- 
+--         if line.label then
+--             print_line = print_line .. line.label .. ": "
+--         end
+-- 
+--         if line.cmd then
+--             print_line = print_line .. line.cmd.cmd_name
+-- 
+--             if line.cmd.args then
+--                 print_line = print_line .. " "
+-- 
+--                 for i, arg in ipairs(line.cmd.args) do
+--                     local print_arg = ""
+-- 
+--                     if arg.register then
+--                         print_arg = print_arg .. arg.register
+--                     elseif arg.register_pair then
+--                         print_arg = print_arg .. arg.register_pair
+--                     elseif arg.byte then
+--                         print_arg = print_arg .. Intel8080.formatting.format_expression(arg.byte) .. " " .. "(" .. inspect(line.cmd.bytes) .. ")"
+--                     elseif arg.word then
+--                         print_arg = print_arg .. Intel8080.formatting.format_expression(arg.word) .. " " .. "(" .. inspect(line.cmd.bytes) .. ")"
+--                     elseif arg.faux then
+--                         print_arg = print_arg .. Intel8080.formatting.format_expression(arg.faux) .. " " .. "(" .. inspect(line.cmd.bytes) .. ")"
+--                     end
+-- 
+--                     if i == 1 then
+--                         print_line = print_line .. print_arg
+--                     else
+--                         print_line = print_line .. ", " .. print_arg
+--                     end
+--                 end
+--             end
+--         end
+-- 
+--         if line.comment then
+--             print_line = print_line .. " ; " .. line.comment
+--         end
+-- 
+--         if line_no == 1 then
+--             listing = print_line
+--         else
+--             listing = listing ..  "\n" .. print_line
+--         end
+--     end
+-- 
+--     return listing
+-- end
+
+Intel8080.formatting.make_listing = function (code, location_counter, labels)
+    local state = Intel8080.assembly.assemble(code, location_counter, labels)
+    local formatted_lines = {}
+    local last_formatted_line = 0
+
+    for _, line in ipairs(state) do
+        if not line.cmd and not line.comment and not line.label then
+            goto continue
+        end
+
+        if last_formatted_line == 0 or line.location_counter ~= formatted_lines[last_formatted_line].location_counter then
+            last_formatted_line = last_formatted_line + 1
+            formatted_lines[last_formatted_line] = {
+                location_counter = line.location_counter,
+                label = {line.label},
+                bytes = line.cmd and line.cmd.bytes or {},
+                asm = line.cmd and {cmd_name = line.cmd.cmd_name, args = line.cmd.args} or nil,
+                comment = {line.comment}
+            }
+        else
+            table.insert(formatted_lines[last_formatted_line].label, line.label)
+            table.insert(formatted_lines[last_formatted_line].comment, line.comment)
+            formatted_lines[last_formatted_line].asm = line.cmd and {cmd_name = line.cmd.cmd_name, args = line.cmd.args} or nil
+            formatted_lines[last_formatted_line].bytes = line.cmd and line.cmd.bytes or nil
+        end
+        ::continue::
+    end
+
+    context.setupxtable({
+        option = "stretch",
+        header = "repeat",
+        footer = "repeat",
+        split  = "repeat",
+        bodyfont = "xx",
+    })
+    context.startxtable()
+
+    context.startxtablehead()
+
+    context.startxrow({align = "center, lohi"})
+        context.startxcell({option = "fixed"})
+            context("Адрес")
+        context.stopxcell()
+
+        context.startxcell({option = "fixed"})
+            context("Метка")
+        context.stopxcell()
+
+        context.startxcell({option = "fixed"})
+            context("Машинный\\blank[none] код")
+        context.stopxcell()
+
+        context.startxcell()
+            context("Ассемблерный\\blank[none] код")
+        context.stopxcell()
+
+        context.startxcell({option = "stretch"})
+            context("Комментарии")
+        context.stopxcell()
+    context.stopxrow()
+
+    context.stopxtablehead()
+
+    context.startxtablebody()
+    for line_no, line in ipairs(formatted_lines) do
+        context.startxrow()
+            context.startxcell()
+                local counter = line.location_counter
+                local result
+                for i, _ in ipairs(line.bytes) do
+                    if i == 1 then
+                        result = string.format([==[\tech{%.4XH}]==], counter)
+                    else
+                        result = result .. string.format([==[\blank[none]\tech{%.4XH}]==], counter)
+                    end
+                    counter = counter + 1
+                end
+                context(result)
+            context.stopxcell()
+
+            context.startxcell({align = "flushright"})
+                local result
+                for i, label in ipairs(line.label) do
+                    if i == 1 then
+                        result = string.format([==[\tech{%s:}]==], label)
+                    else
+                        result = result .. string.format([==[\blank[none]\tech{%s:}]==], label)
+                    end
+                end
+                context(result)
+            context.stopxcell()
+
+            context.startxcell({align = "center, lohi", width = "\\dimexpr\\widthofstring{Машинный} + 1em"})
+                local result
+                for i, byte in ipairs(line.bytes) do
+                    if i == 1 then
+                        result = string.format([==[\tech{%.2X}]==], byte)
+                    else
+                        result = result .. string.format([==[\blank[none]\tech{%.2X}]==], byte)
+                    end
+                    counter = counter + 1
+                end
+                context(result)
+            context.stopxcell()
+
+            context.startxcell({align = "flushleft", width = "\\dimexpr\\widthofstring{Ассемблерный код} + 5em"})
+                local args = ""
+                if line.asm.args then
+                    for i, arg in ipairs(line.asm.args) do
+                        local formatted
+                        if arg.register or arg.register_pair then
+                            formatted = arg.register or arg.register_pair
+                        elseif arg.byte or arg.word or arg.faux then
+                            formatted = Intel8080.formatting.format_expression(arg.byte or arg.word or arg.faux)
+                        end
+
+                        if i == 1 then
+                            args = formatted
+                        else
+                            args = args .. ", " .. formatted
+                        end
+                    end
+
+                    context([==[\tech{%s %s}]==], line.asm.cmd_name, args)
+                else
+                    context([==[\tech{\tt %s}]==], line.asm.cmd_name)
+                end
+            context.stopxcell()
+
+            context.startxcell({align = "width, stretch, morehyphenated"})
+                for i, comment in ipairs(line.comment) do
+                    if i == 1 then
+                        context([==[%s]==], comment)
+                    else
+                        context([==[ %s]==], comment)
+                    end
+                end
+            context.stopxcell()
+        context.stopxrow()
+    end
+    context.stopxtablebody()
+    context.stopxtable()
+end
+
+\stopluacode
+
+\stopenvironment

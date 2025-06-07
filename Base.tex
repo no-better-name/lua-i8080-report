@@ -1,0 +1,126 @@
+\startenvironment Base
+
+\setupalign[fullhz, hanging]
+\setuppagenumbering[location={footer}]
+\definefontfeature [default] [default] [cv03, pnum, onum, liga, protrusion=quality, expansion=quality, script=cyrillic, mode=node]
+
+\startluacode
+fonts.handlers.otf.addfeature {
+    name = "addedsc",
+    type = "substitution",
+    data = {
+        A = "A.sc",
+        B = "B.sc",
+        C = "C.sc",
+        D = "D.sc",
+        E = "E.sc",
+        F = "F.sc",
+        G = "G.sc",
+        H = "H.sc",
+        I = "I.sc",
+        J = "J.sc",
+        K = "K.sc",
+        L = "L.sc",
+        M = "M.sc",
+        N = "N.sc",
+        O = "O.sc",
+        P = "P.sc",
+        Q = "Q.sc",
+        R = "R.sc",
+        S = "S.sc",
+        T = "T.sc",
+        U = "U.sc",
+        V = "V.sc",
+        W = "W.sc",
+        X = "X.sc",
+        Y = "Y.sc",
+        Z = "Z.sc",
+        },
+}
+\stopluacode
+
+\definefontfeature[capstosc][c2sc=always, addedsc=yes]
+\definefontfeature[opnum][onum=yes, lnum=no, pnum=yes, tnum=no]
+\definefontfeature[otnum][onum=yes, lnum=no, pnum=no, tnum=yes]
+\definefontfeature[lpnum][onum=no, lnum=yes, pnum=yes, tnum=no]
+\definefontfeature[ltnum][onum=no, lnum=yes, pnum=no, tnum=yes]
+\definefontfeature [smallcaps] [smcp=always, lowercasing=yes]
+%\setupbodyfont[newcomputermodern-book, 12pt]
+\setupbodyfont[timesnewroman, 12pt]
+\setupcapitals[sc=on]
+
+\definefontfeature[textfraction][frac=yes]
+\define[2]\fffrac{{\feature[+][textfraction]{#1}/{#2}}}
+
+\definereferenceformat[eqref][left=(,right=)]
+
+\setupinteraction[state=start, color=, contrastcolor=, style=]
+%\setupinteractionscreen[option=bookmark] 
+%\enabledirectives[references.border]
+
+\definecharacterkerning[titlecapskerning][factor=0.075]
+\definecharacterkerning[abbrkerning][factor=0.075]
+\definecharacterkerning[corpkerning][factor=0.075]
+
+\define\titlecapsstyle{\setcharacterkerning[titlecapskerning]\feature[+][smallcaps]}
+\definehighlight[titlecaps][style=\titlecapsstyle]
+\definestartstop[titlecaps][style=\titlecapsstyle]
+
+\define\abbrstyle{\setcharacterkerning[abbrkerning]\feature[+][capstosc]}
+\definehighlight[abbr][style=\abbrstyle]
+
+\define\corpstyle{\feature[+][capstosc]}
+\definehighlight[corp][style=\corpstyle]
+
+\define\objectstyle{\ss}
+\definehighlight[object][style=\objectstyle]
+
+\define\techstyle{\tt}
+\definehighlight[tech][style=\techstyle]
+
+\definebar[sigbar][underbar][color=black, continue=yes, empty=yes]
+\definebar[fieldbar][underbar][color=black, continue=yes]
+\starttexdefinition unexpanded widefield #1
+   \startbar[fieldbar]
+   \zwj\quad#1\hfill\zwj
+   \stopbar
+\stoptexdefinition
+\starttexdefinition unexpanded centeredfield #1
+   \startbar[fieldbar]
+   \zwj\quad#1\quad\zwj
+   \stopbar
+\stoptexdefinition
+
+\define[1]\angled{{‹#1›}}
+
+\def\sigline#1#2{%
+    \setbox0=\hbox{#1}%
+    \setbox1=\hbox{\tfxx #2}%
+    \setbox2=\vtop{\box0\tfxx\box1}%
+    \smash{%
+        \vtop{%
+            \hbox to \wd2{\sigbar{#1}}\tfxx\setupinterlinespace%
+            \hbox to \wd2{\hfil\tfxx#2\hfil}%
+        }%
+    }%
+}
+
+\setupfloat[indentnext=yes]
+
+\defineunit[mathunit][alternative=math]
+\defineunit[textunit][alternative=text]
+
+\defineframed[tightbox][
+    align={lohi, center},
+    strut=no,
+    frame=off,
+    offset=overlay,
+    rulethickness=0pt,
+]
+\defineframed[tighthbox][
+    strut=no,
+    frame=off,
+    offset=overlay,
+]
+
+\stopenvironment

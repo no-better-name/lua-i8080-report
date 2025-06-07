@@ -1,0 +1,202 @@
+\startenvironment TableParse
+
+\startluacode
+
+pretty_table = pretty_table or {};
+
+pretty_table.new_processor = function (formatting, parsing)
+    local processor = {};
+
+    -- formatting
+    processor.formatting = {
+        remove_trailing_zeroes = function (num_string)
+            return num_string:gsub("0+$", "");
+        end,
+        remove_leading_zeroes = function (num_string)
+            result = num_string:gsub("^0+", "");
+            if result == "" then result = "0"; end;
+            return result
+        end,
+    };
+    processor.formatting.number = {
+        float = {
+            format_string = formatting.precision and ("%." .. formatting.precision .. "f") or "%s",
+            dec_sep = formatting.dec_sep or ".",
+        },
+        exp = {
+            exp_sep = formatting.exp_sep or "e",
+        },
+    };
+
+    processor.formatting.number.float.from_parts = function (parts)
+        local result = parts.sign .. parts.integer;
+        if parts.decimal ~= "" then
+            result = result .. processor.formatting.number.float.dec_sep .. parts.decimal;
+        end
+        return result;
+    end;
+
+    processor.formatting.number.exp.from_parts = function (parts)
+        return parts.mantissa .. processor.formatting.number.exp.exp_sep .. parts.exp_sign .. parts.exponent;
+    end;
+
+    -- parsing
+    processor.parsing = {
+        cell_sep = parsing.cell_sep or lpeg.P(" ")^1,
+        row_sep = parsing.row_sep or lpeg.P("\n"),
+    };
+    processor.parsing.text = (lpeg.P(1) - processor.parsing.cell_sep - processor.parsing.row_sep)^1;
+    processor.parsing.number = {
+        float = {
+            sign = parsing.sign or lpeg.S("-+"),
+            digits = parsing.digits or lpeg.R("09")^1,
+            dec_sep = parsing.dec_sep or lpeg.S(".,"),
+        },
+        exp = {
+            exp_sep = parsing.exp_sep or lpeg.S("eE"),
+        },
+    };
+
+    processor.parsing.number.float.parts = lpeg.Ct(
+          lpeg.Cg(processor.parsing.number.float.sign^-1, "sign")
+        * lpeg.Cg(processor.parsing.number.float.digits / processor.formatting.remove_leading_zeroes, "integer")
+        * processor.parsing.number.float.dec_sep^-1
+        * lpeg.Cg(processor.parsing.number.float.digits^-1 / processor.formatting.remove_trailing_zeroes, "decimal")
+    );
+    processor.parsing.number.float.whole = processor.parsing.number.float.parts / processor.formatting.number.float.from_parts;
+
+    processor.parsing.number.exp.parts = lpeg.Ct(
+          lpeg.Cg(processor.parsing.number.float.whole, "mantissa")
+        * processor.parsing.number.exp.exp_sep
+        * lpeg.Cg(processor.parsing.number.float.sign^-1, "exp_sign")
+        * lpeg.Cg(processor.parsing.number.float.digits / processor.formatting.remove_leading_zeroes, "exponent")
+    );
+    processor.parsing.number.exp.whole = processor.parsing.number.exp.parts / processor.formatting.number.exp.from_parts;
+
+    processor.parsing.cell = lpeg.Ct(
+          lpeg.Cg(processor.parsing.number.exp.whole, "exp")
+        + lpeg.Cg(processor.parsing.number.float.whole, "float")
+        + lpeg.Cg(processor.parsing.text, "text")
+    );
+    processor.parsing.row = lpeg.Ct(
+        processor.parsing.cell * (processor.parsing.cell_sep * processor.parsing.cell)^0
+    );
+    processor.parsing.table = lpeg.Ct(
+        processor.parsing.row * (processor.parsing.row_sep * processor.parsing.row)^0
+    );
+
+    processor.processing = {
+        prepare = function(table_string)
+            local result = {};
+
+            result.match = processor.parsing.table:match(table_string);
+
+            result.table_dimensions = {
+                rows = #result.match,
+                columns = 0,
+            };
+            for _, row in pairs(result.match) do
+                result.table_dimensions.columns = math.max(result.table_dimensions.columns, #row);
+            end;
+
+            result.number_dimensions = {
+                integer = {};
+                decimal = {};
+                sign = {};
+            };
+
+            for row_key, row in pairs(result.match) do
+                for cell_key, cell in pairs(row) do
+                    if cell.float then
+                        local dissect = processor.parsing.number.float.parts:match(string.format(processor.formatting.number.float.format_string, cell.float));
+                        result.number_dimensions.integer[cell_key] = math.max(result.number_dimensions.integer[cell_key] or 0, #dissect.integer);
+                        result.number_dimensions.decimal[cell_key] = math.max(result.number_dimensions.decimal[cell_key] or 0, #dissect.decimal);
+                        result.number_dimensions.sign[cell_key] = math.max(result.number_dimensions.sign[cell_key] or 0, #dissect.sign);
+                    end;
+                end;
+            end;
+
+            result.table = {};
+            for row_key, row in pairs(result.match) do
+                result.table[row_key] = {};
+
+                for cell_key, cell in pairs(row) do
+                    if cell.float then
+                        local dissect = processor.parsing.number.float.parts:match(string.format(processor.formatting.number.float.format_string, cell.float));
+
+                        local sign;
+                        if dissect.sign == "" and result.number_dimensions.sign[cell_key] ~= 0 then
+                            sign = "/"
+                        else
+                            sign = dissect.sign
+                        end;
+
+                        local integer = string.rep("_", result.number_dimensions.integer[cell_key] - #dissect.integer) .. dissect.integer;
+                        local decimal = "";
+                        if result.number_dimensions.decimal[cell_key] ~= 0 then
+                            decimal = 
+                                   processor.formatting.number.float.dec_sep
+                                .. dissect.decimal
+                                .. string.rep("=", result.number_dimensions.decimal[cell_key] - #dissect.decimal);
+                        end;
+
+                        result.table[row_key][cell_key] = [[\unit{]] .. sign .. integer .. decimal .. [[}]];
+                    end;
+
+                    if cell.exp then
+                        local dissect = processor.parsing.number.exp.parts:match(cell.exp);
+                        dissect.mantissa = processor.parsing.number.float.whole:match(string.format(processor.formatting.number.float.format_string, dissect.mantissa));
+                        result.table[row_key][cell_key] = [[\m{]]
+                            .. [[\unit{]] .. dissect.mantissa .. [[}]]
+                            .. [[ \times 10^{]]
+                            .. [[\unit{]] .. dissect.exp_sign .. dissect.exponent .. [[}]]
+                            .. [[}]]
+                            .. [[}]]
+                    end;
+
+                    if cell.text then
+                        result.table[row_key][cell_key] = cell.text
+                    end;
+                end;
+            end;
+
+            result.values = {};
+            for row_key, row in pairs(result.match) do
+                result.values[row_key] = {};
+
+                for cell_key, cell in pairs(row) do
+                    if cell.float or cell.exp then
+                        local value = string.format(processor.formatting.number.float.format_string, cell.float or cell.exp);
+                        result.values[row_key][cell_key] = value
+                    end;
+
+                    if cell.text then
+                        result.values[row_key][cell_key] = cell.text
+                    end;
+                end;
+            end;
+
+            return result;
+        end,
+
+        output = function (result)
+            for row_key, row in pairs(result.match) do
+                context.startxrow();
+
+                for cell_key, cell in pairs(row) do
+                    context.startxcell();
+                    context(result.table[row_key][cell_key]);
+                    context.stopxcell();
+                end;
+
+                context.stopxrow();
+            end
+        end;
+    };
+
+    return processor;
+end;
+
+\stopluacode
+
+\stopenvironment

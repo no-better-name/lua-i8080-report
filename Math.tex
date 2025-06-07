@@ -1,0 +1,24 @@
+\startenvironment Math
+
+\definemathfunction[Re]
+\definemathfunction[Im]
+\define\imag{{\rm i}}
+\define\jmag{{\rm j}}
+\define\econst{{\rm e}}
+\define\piconst{{\mathgreekupright\rm π}}
+\define\mellipsis{\mathinner{…}}
+\define\mtwodots{\mathinner{‥}}
+
+\define\tran{\mkern-1.5mu{\ss T}}
+
+\defineconversionset[mathconversion][n, a]
+\setupmathematics[
+    differentiald=upright,
+    integral=displaylimits,
+]
+\setupformula[
+    numberconversionset=mathconversion,
+    numberseparatorset=none,
+]
+
+\stopenvironment
