@@ -2,11 +2,19 @@
 
 \environment Base
 
-\setupsectionblock[contents][
+\setupsectionblock[task][
     page=yes,
     number=yes,
 ]
-\setupsectionblock[task][
+\setupsectionblock[annotation][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[terms][
+    page=yes,
+    number=yes,
+]
+\setupsectionblock[contents][
     page=yes,
     number=yes,
 ]
@@ -38,7 +46,7 @@
 
 \unprotect
 \defineconversion[\s!ru][a][\russiannumerals]
-\defineconversion[\s!ru][A][\corpstyle\russianNumerals]
+\defineconversion[\s!ru][A][\russianNumerals]
 \protect
 
 \setuptyping[
@@ -60,7 +68,7 @@
 
 \setuplanguage[ru][patterns={ru,gb}]
 \mainlanguage[ru]
-\setuplabeltext[ru][appendix=Приложение~]
+\setuplabeltext[ru][appendix=Приложение ]
 
 \definefloat[codelisting][codelistings]
 \setuplabeltext[ru][codelisting=Листинг ]
@@ -74,7 +82,7 @@
 \setupitemgroup[itemize][each][intext, packed]
 \setupitemgroup[itemize][alignsymbol=yes, indenting=\defaultparindent]
 
-\placebookmarks[chapter, title, pagechapter, pagetitle, appendixchapter, section, subsection]
+\placebookmarks[chapter, title, pagechapter, pagetitle, appendixchapter, excludedtitle, excludedchapter, section, subsection]
 \setupcaptions[way=bytext, prefix=no]%, prefixsegments=chapter:section]
 \setupformulae[way=bytext, prefix=no]
 
@@ -96,11 +104,14 @@
     number=yes,
 ]
 
+\startsectionblockenvironment[appendix]
+\writebetweenlist[chapter]{\blank[disable]}
+\stopsectionblockenvironment
+
 \setupindenting[yes, \defaultparindent, first]
 
-\setuplist[alternative=c, style=\feature[+]{opnum}]
-\setuplist[chapter, pagechapter, title, pagetitle, appendixchapter][numberstyle=\tfa\titlecapsstyle, textstyle=\tfa\titlecapsstyle]
-\setuplist[section][numberstyle=\titlecapsstyle]
+\setuplist[criterium=all, alternative=c, style=\feature[+]{ltnum}]
+\setuplist[appendixchapter][label=yes, width=fit, distance=1em]
 
 \setupheadtext[content=Содержание]
 
@@ -111,9 +122,9 @@
     distance=1em,
     indentnext=yes,
     page=no,
-    before=\blank[big],
     after=\blank[line],
 ]
+\definehead[excludedchapter][chapter]
 \definehead[pagechapter][chapter][
     page=yes,
 ]
@@ -124,6 +135,7 @@
 \setuphead[title][
     incrementnumber=list,
 ]
+\definehead[excludedtitle][title]
 \definehead[pagetitle][title][
     page=yes,
 ]
@@ -138,6 +150,9 @@
     before=\blank[big],
     after=\blank[medium],
 ]
+\definehead[pagesection][section][
+    page=yes,
+]
 \setuphead[subsection][
     style=\bf,
     numberstyle=\hskip\defaultparindent,
@@ -147,7 +162,7 @@
     distance=1em,
     indentnext=yes,
 ]
-\setupcombinedlist[content][list={chapter, pagechapter, appendixchapter, title, pagetitle, section}]
+\setupcombinedlist[content][list={chapter, pagechapter, appendixchapter, title, pagetitle, section, pagesection}]
 
 \definelayout[titlepage][
     backspace=30mm, topspace=20mm,
@@ -159,49 +174,48 @@
 \definemakeup[titlepage][align={last, fullhz, hanging}, pagestate=start]
 
 \startbuffer[titlepagebuf]
-    \starttitlepagemakeup
-        \setbox0=\vbox{%
-            Бюджетное учреждение высшего образования\blank[none]
-            Ханты-Мансийского автономного округа–Югры\blank[none]
-            \quotation{Сургутский государственный университет}%
-        }%
-        \vskip \dimexpr 0.5\ht0 + 0.5\dp0
-        \vbox to 0pt{\vss\unvbox0\vss}%
-        \vfill
-        \vbox to 0pt{%
-            \vss
-            \starttitlecaps\tfa
-            Отчёт\blank[small]
-            по лабораторной работе №\documentvariable{lab:number}\blank[none]
-            по теме: \quotation{\documentvariable{lab:topic}}\blank[none]
-            по дисциплине: \quotation{\documentvariable{lab:subject}}
-            \stoptitlecaps
-            \vss
-        }%
-        \vfill
-        \vbox to 0pt{%
-            \vss
-            \startalignment[flushleft]
-            Выполнил: студент группы 605-11,\blank[none]
-            \documentvariable{lab:author}\blank[small]
-            Принял: старший преподаватель кафедры \abbr{АиКС},\blank[none]
-            \documentvariable{lab:reviewer}
-            \stopalignment
-            \vss
-        }%
-        \vfill
-        \setbox0=\vbox{%
-            Сургут \the\year%
-        }%
-        \vbox to 0pt{\vss\unvcopy0\vss}%
-        \vskip \dimexpr 0.5\ht0 + 0.5\dp0
-    \stoptitlepagemakeup
+    %\starttitlepagemakeup
+    %    \setbox0=\vbox{%
+    %        Бюджетное учреждение высшего образования\blank[none]
+    %        Ханты-Мансийского автономного округа–Югры\blank[none]
+    %        \quotation{Сургутский государственный университет}%
+    %    }%
+    %    \vskip \dimexpr 0.5\ht0 + 0.5\dp0
+    %    \vbox to 0pt{\vss\unvbox0\vss}%
+    %    \vfill
+    %    \vbox to 0pt{%
+    %        \vss
+    %        \starttitlecaps\tfa
+    %        Отчёт\blank[small]
+    %        по лабораторной работе №\documentvariable{lab:number}\blank[none]
+    %        по теме: \quotation{\documentvariable{lab:topic}}\blank[none]
+    %        по дисциплине: \quotation{\documentvariable{lab:subject}}
+    %        \stoptitlecaps
+    %        \vss
+    %    }%
+    %    \vfill
+    %    \vbox to 0pt{%
+    %        \vss
+    %        \startalignment[flushleft]
+    %        Выполнил: студент группы 605-11,\blank[none]
+    %        \documentvariable{lab:author}\blank[small]
+    %        Принял: старший преподаватель кафедры \abbr{АиКС},\blank[none]
+    %        \documentvariable{lab:reviewer}
+    %        \stopalignment
+    %        \vss
+    %    }%
+    %    \vfill
+    %    \setbox0=\vbox{%
+    %        Сургут \the\year%
+    %    }%
+    %    \vbox to 0pt{\vss\unvcopy0\vss}%
+    %    \vskip \dimexpr 0.5\ht0 + 0.5\dp0
+    %\stoptitlepagemakeup
 \stopbuffer
 
 \setupdocument[
-    metadata:title=Лабораторная работа №\documentvariable{lab:number}. \documentvariable{lab:topic},
+    metadata:title=Выпускная квалификационная работа. \documentvariable{lab:topic}. Пояснительная записка,
     metadata:author=\documentvariable{lab:author},
-    metadata:subject=\documentvariable{lab:subject},
 ]
 
 \startsetups document:start
