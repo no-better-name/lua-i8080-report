@@ -3,23 +3,19 @@
 \startluacode
 
 local lpeg = require "lpeg"
--- local inspect = require "inspect"
--- local utf8 = require "utf8"
+intel8080 = {}
 
-Intel8080 = {}
-Intel8080.assembly = {}
-Intel8080.tokenising = {}
-Intel8080.formatting = {}
+intel8080.langdef = {}
 
-Intel8080.assembly.cmd = {
+intel8080.langdef.opcodes = {
     NOP  = {
         {cmd = 0x00, args = {}},
     },
     LXI  = {
-        { cmd = 0x01, args = {{register_pair = "B"},  {word = true}}, },
-        { cmd = 0x11, args = {{register_pair = "D"},  {word = true}}, },
-        { cmd = 0x21, args = {{register_pair = "H"},  {word = true}}, },
-        { cmd = 0x31, args = {{register_pair = "SP"}, {word = true}}, },
+        { cmd = 0x01, args = {{register_pair = "B"},  {word = "data"}}, },
+        { cmd = 0x11, args = {{register_pair = "D"},  {word = "data"}}, },
+        { cmd = 0x21, args = {{register_pair = "H"},  {word = "data"}}, },
+        { cmd = 0x31, args = {{register_pair = "SP"}, {word = "data"}}, },
     },
     STAX = {
         { cmd = 0x02, args = {{register_pair = "B"}}, },
@@ -52,14 +48,14 @@ Intel8080.assembly.cmd = {
         { cmd = 0x3D, args = {{register = "A"}}, },
     },
     MVI  = {
-        { cmd = 0x06, args = {{register = "B"}, {byte = true}}, },
-        { cmd = 0x16, args = {{register = "D"}, {byte = true}}, },
-        { cmd = 0x26, args = {{register = "H"}, {byte = true}}, },
-        { cmd = 0x36, args = {{register = "M"}, {byte = true}}, },
-        { cmd = 0x0E, args = {{register = "C"}, {byte = true}}, },
-        { cmd = 0x1E, args = {{register = "E"}, {byte = true}}, },
-        { cmd = 0x2E, args = {{register = "L"}, {byte = true}}, },
-        { cmd = 0x3E, args = {{register = "A"}, {byte = true}}, },
+        { cmd = 0x06, args = {{register = "B"}, {byte = "data"}}, },
+        { cmd = 0x16, args = {{register = "D"}, {byte = "data"}}, },
+        { cmd = 0x26, args = {{register = "H"}, {byte = "data"}}, },
+        { cmd = 0x36, args = {{register = "M"}, {byte = "data"}}, },
+        { cmd = 0x0E, args = {{register = "C"}, {byte = "data"}}, },
+        { cmd = 0x1E, args = {{register = "E"}, {byte = "data"}}, },
+        { cmd = 0x2E, args = {{register = "L"}, {byte = "data"}}, },
+        { cmd = 0x3E, args = {{register = "A"}, {byte = "data"}}, },
     },
     RLC  = {
         { cmd = 0x07, args = {}, },
@@ -82,18 +78,15 @@ Intel8080.assembly.cmd = {
     },
     RRC  = {
         { cmd = 0x0F, args = {}, },
-        cmd = 0x0F,
     },
     RAL  = {
         { cmd = 0x17, args = {}, },
-        cmd = 0x17,
     },
     RAR  = {
         { cmd = 0x1F, args = {}, },
-        cmd = 0x1F,
     },
     SHLD = {
-        { cmd = 0x22, args = {{byte = true}}, },
+        { cmd = 0x22, args = {{word = "address"}}, },
     },
     DAA  = {
         { cmd = 0x27, args = {}, },
@@ -104,17 +97,16 @@ Intel8080.assembly.cmd = {
         cmd = 0x2F,
     },
     STA  = {
-        { cmd = 0x32, args = {{byte = true}}, },
+        { cmd = 0x32, args = {{word = "address"}}, },
     },
     STC  = {
         { cmd = 0x37, args = {}, },
     },
     LDA  = {
-        { cmd = 0x3A, args = {{byte = true}}, },
+        { cmd = 0x3A, args = {{word = "address"}}, },
     },
     CMC  = {
         { cmd = 0x3F, args = {}, },
-        cmd = 0x3F,
     },
     MOV  = {
         { cmd = 0x40, args = {{register = "B"}, {register = "B"}}, },
@@ -171,7 +163,6 @@ Intel8080.assembly.cmd = {
         { cmd = 0x73, args = {{register = "M"}, {register = "E"}}, },
         { cmd = 0x74, args = {{register = "M"}, {register = "H"}}, },
         { cmd = 0x75, args = {{register = "M"}, {register = "L"}}, },
-        { cmd = 0x76, args = {{register = "M"}, {register = "M"}}, },
         { cmd = 0x77, args = {{register = "M"}, {register = "A"}}, },
         { cmd = 0x78, args = {{register = "A"}, {register = "B"}}, },
         { cmd = 0x79, args = {{register = "A"}, {register = "C"}}, },
@@ -275,13 +266,13 @@ Intel8080.assembly.cmd = {
         { cmd = 0xF1, args = {{register_pair = "PSW"}}, },
     },
     JNZ  = {
-        { cmd = 0xC2, args = {{word = true}}, },
+        { cmd = 0xC2, args = {{word = "address"}}, },
     },
     JMP  = {
-        { cmd = 0xC3, args = {{word = true}}, },
+        { cmd = 0xC3, args = {{word = "address"}}, },
     },
     CNZ  = {
-        { cmd = 0xC4, args = {{word = true}}, },
+        { cmd = 0xC4, args = {{word = "address"}}, },
     },
     PUSH = {
         { cmd = 0xC5, args = {{register_pair = "B"}}, },
@@ -290,7 +281,7 @@ Intel8080.assembly.cmd = {
         { cmd = 0xF5, args = {{register_pair = "PSW"}}, },
     },
     ADI  = {
-        { cmd = 0xC6, args = {{byte = true}}, },
+        { cmd = 0xC6, args = {{byte = "data"}}, },
     },
     RST  = {
         {
@@ -304,7 +295,7 @@ Intel8080.assembly.cmd = {
                 [6] = 0xF7,
                 [7] = 0xFF,
             },
-            args = {{faux = true}},
+            args = {{faux = "address"}},
         },
     },
     RZ   = {
@@ -314,61 +305,61 @@ Intel8080.assembly.cmd = {
         { cmd = 0xC9, args = {}, },
     },
     JZ   = {
-        { cmd = 0xCA, args = {{word = true}}, },
+        { cmd = 0xCA, args = {{word = "address"}}, },
     },
     CZ   = {
-        { cmd = 0xCC, args = {{word = true}}, },
+        { cmd = 0xCC, args = {{word = "address"}}, },
     },
     CALL = {
-        { cmd = 0xCD, args = {{word = true}}, },
+        { cmd = 0xCD, args = {{word = "address"}}, },
     },
     ACI  = {
-        { cmd = 0xCE, args = {{byte = true}}, },
+        { cmd = 0xCE, args = {{byte = "data"}}, },
     },
     RNC  = {
         { cmd = 0xD0, args = {}, },
     },
     JNC  = {
-        { cmd = 0xD2, args = {{word = true}}, },
+        { cmd = 0xD2, args = {{word = "address"}}, },
     },
     OUT  = {
-        { cmd = 0xD3, args = {{byte = true}}, },
+        { cmd = 0xD3, args = {{byte = "address"}}, },
     },
     CNC  = {
-        { cmd = 0xD4, args = {{word = true}}, },
+        { cmd = 0xD4, args = {{word = "address"}}, },
     },
     SUI  = {
-        { cmd = 0xD6, args = {{byte = true}}, },
+        { cmd = 0xD6, args = {{byte = "data"}}, },
     },
     RC   = {
         { cmd = 0xD8, args = {}, },
     },
     JC   = {
-        { cmd = 0xDA, args = {{word = true}}, },
+        { cmd = 0xDA, args = {{word = "address"}}, },
     },
     IN   = {
-        { cmd = 0xDB, args = {{byte = true}}, },
+        { cmd = 0xDB, args = {{byte = "address"}}, },
     },
     CC   = {
-        { cmd = 0xDC, args = {{word = true}}, },
+        { cmd = 0xDC, args = {{word = "address"}}, },
     },
     SBI  = {
-        { cmd = 0xDE, args = {{byte = true}}, },
+        { cmd = 0xDE, args = {{byte = "data"}}, },
     },
     RPO  = {
-        { cmd = 0xE0, args = {{byte = true}}, },
+        { cmd = 0xE0, args = {}, },
     },
     JPO  = {
-        { cmd = 0xE2, args = {{word = true}}, },
+        { cmd = 0xE2, args = {{word = "address"}}, },
     },
     XTHL = {
         { cmd = 0xE3, args = {}, },
     },
     CPO  = {
-        { cmd = 0xE4, args = {{word = true}}, },
+        { cmd = 0xE4, args = {{word = "address"}}, },
     },
     ANI  = {
-        { cmd = 0xE6, args = {{byte = true}}, },
+        { cmd = 0xE6, args = {{byte = "data"}}, },
     },
     RPE  = {
         { cmd = 0xE8, args = {}, },
@@ -377,31 +368,31 @@ Intel8080.assembly.cmd = {
         { cmd = 0xE9, args = {}, },
     },
     JPE  = {
-        { cmd = 0xEA, args = {{word = true}}, },
+        { cmd = 0xEA, args = {{word = "address"}}, },
     },
     XCHG = {
         { cmd = 0xEB, args = {}, },
     },
     CPE  = {
-        { cmd = 0xEC, args = {{word = true}}, },
+        { cmd = 0xEC, args = {{word = "address"}}, },
     },
     XRI  = {
-        { cmd = 0xEE, args = {{byte = true}}, },
+        { cmd = 0xEE, args = {{byte = "data"}}, },
     },
     RP   = {
         { cmd = 0xF0, args = {}, },
     },
     JP   = {
-        { cmd = 0xF2, args = {{word = true}}, },
+        { cmd = 0xF2, args = {{word = "address"}}, },
     },
     DI   = {
         { cmd = 0xF3, args = {}, },
     },
     CP   = {
-        { cmd = 0xF4, args = {{word = true}}, },
+        { cmd = 0xF4, args = {{word = "address"}}, },
     },
     ORI  = {
-        { cmd = 0xF6, args = {{byte = true}}, },
+        { cmd = 0xF6, args = {{byte = "data"}}, },
     },
     RM   = {
         { cmd = 0xF8, args = {}, },
@@ -410,28 +401,28 @@ Intel8080.assembly.cmd = {
         { cmd = 0xF9, args = {}, },
     },
     JM   = {
-        { cmd = 0xFA, args = {{word = true}}, },
+        { cmd = 0xFA, args = {{word = "address"}}, },
     },
     EI   = {
         { cmd = 0xFB, args = {}, },
     },
     CM   = {
-        { cmd = 0xFC, args = {{word = true}}, },
+        { cmd = 0xFC, args = {{word = "address"}}, },
     },
     CPI  = {
-        { cmd = 0xFE, args = {{byte = true}}, },
+        { cmd = 0xFE, args = {{byte = "data"}}, },
     },
 }
 
-Intel8080.tokenising.blank = lpeg.S(utf8.char(0x20, 0x09))
-Intel8080.tokenising.arg_sep = lpeg.P ","
-Intel8080.tokenising.label_delim = lpeg.P ":"
-Intel8080.tokenising.comment_delim = lpeg.P ";"
-Intel8080.tokenising.newline = lpeg.P "\n"
+intel8080.parsing = {}
 
-Intel8080.tokenising.data = {}
+intel8080.parsing.blank = lpeg.S(utf8.char(0x20, 0x09))
+intel8080.parsing.arg_sep = lpeg.P ","
+intel8080.parsing.label_delim = lpeg.P ":"
+intel8080.parsing.comment_delim = lpeg.P ";"
+intel8080.parsing.newline = lpeg.P "\n"
 
-Intel8080.tokenising.data.register = {
+intel8080.parsing.register = {
     A = lpeg.Cg((lpeg.P "A" + lpeg.P "a") / string.upper),
     B = lpeg.Cg((lpeg.P "B" + lpeg.P "b") / string.upper),
     C = lpeg.Cg((lpeg.P "C" + lpeg.P "c") / string.upper),
@@ -442,7 +433,7 @@ Intel8080.tokenising.data.register = {
     M = lpeg.Cg((lpeg.P "M" + lpeg.P "m") / string.upper),
 }
 
-Intel8080.tokenising.data.register_pair = {
+intel8080.parsing.register_pair = {
     B = lpeg.Cg((lpeg.P "B" + lpeg.P "b") / string.upper),
     D = lpeg.Cg((lpeg.P "D" + lpeg.P "d") / string.upper),
     H = lpeg.Cg((lpeg.P "H" + lpeg.P "h") / string.upper),
@@ -453,7 +444,7 @@ Intel8080.tokenising.data.register_pair = {
     PSW = lpeg.Cg((lpeg.P "PSW" + lpeg.P "psw") / string.upper),
 }
 
-Intel8080.tokenising.data.numeric = {
+intel8080.parsing.numeric = {
     bin = lpeg.Ct(lpeg.Cg(lpeg.R "01"^1, "value")
         * lpeg.Cg(lpeg.S "Bb" / "2", "radix")),
 
@@ -467,62 +458,43 @@ Intel8080.tokenising.data.numeric = {
         * lpeg.Cg(lpeg.S "Hh" / "16", "radix")),
 }
 
-Intel8080.tokenising.data.numeric.to_number = function (num_match)
-    return tonumber(num_match.value, num_match.radix)
-end
+intel8080.parsing.location_counter = lpeg.Cg (lpeg.P "$")
 
-Intel8080.tokenising.data.location_counter = lpeg.P "$"
+intel8080.parsing.label
+    = lpeg.Cg((lpeg.R("az", "AZ") + lpeg.S "_-" + lpeg.P "@" + lpeg.P "?") * (lpeg.R("az", "AZ", "09") + lpeg.S "_-")^0)
 
-Intel8080.tokenising.data.ascii_literal = lpeg.P "'" * lpeg.Cg((lpeg.P "''" + (lpeg.utfR(0x00, 0x7F) - lpeg.P "'"))^1 /
-    function (str)
-        return str:gsub("''", "'")
-    end
-) * lpeg.P "'"
-
-Intel8080.tokenising.data.label
-    = (lpeg.R("az", "AZ") + lpeg.S "_-" + lpeg.P "@" + lpeg.P "?") * (lpeg.R("az", "AZ", "09") + lpeg.S "_-")^0
-
-Intel8080.tokenising.operation = {
-    OR = (lpeg.P "OR" + lpeg.P "or") / string.upper,
-    XOR = (lpeg.P "XOR" + lpeg.P "xor") / string.upper,
-    AND = (lpeg.P "AND" + lpeg.P "and") / string.upper,
-    NOT = (lpeg.P "NOT" + lpeg.P "not") / string.upper,
-    EQ = (lpeg.P "EQ" + lpeg.P "eq") / string.upper,
-    LT = (lpeg.P "LT" + lpeg.P "lt") / string.upper,
-    LE = (lpeg.P "LE" + lpeg.P "le") / string.upper,
-    GT = (lpeg.P "GT" + lpeg.P "gt") / string.upper,
-    GE = (lpeg.P "GE" + lpeg.P "ge") / string.upper,
-    NE = (lpeg.P "NE" + lpeg.P "ne") / string.upper,
-    MOD = (lpeg.P "MOD" + lpeg.P "mod") / string.upper,
-    SHL = (lpeg.P "SHL" + lpeg.P "shl") / string.upper,
-    SHR = (lpeg.P "SHR" + lpeg.P "shr") / string.upper,
-    HIGH = (lpeg.P "HIGH" + lpeg.P "high") / string.upper,
-    LOW = (lpeg.P "LOW" + lpeg.P "low") / string.upper,
-    PLUS = lpeg.P "+",
-    MINUS = lpeg.P "-",
-    TIMES = lpeg.P "*",
-    DIV = lpeg.P "/",
+intel8080.parsing.operation = {
+    OR    = lpeg.Cg ((lpeg.P "OR" + lpeg.P "or") / string.upper),
+    XOR   = lpeg.Cg ((lpeg.P "XOR" + lpeg.P "xor") / string.upper),
+    AND   = lpeg.Cg ((lpeg.P "AND" + lpeg.P "and") / string.upper),
+    NOT   = lpeg.Cg ((lpeg.P "NOT" + lpeg.P "not") / string.upper),
+    EQ    = lpeg.Cg ((lpeg.P "EQ" + lpeg.P "eq") / string.upper),
+    LT    = lpeg.Cg ((lpeg.P "LT" + lpeg.P "lt") / string.upper),
+    LE    = lpeg.Cg ((lpeg.P "LE" + lpeg.P "le") / string.upper),
+    GT    = lpeg.Cg ((lpeg.P "GT" + lpeg.P "gt") / string.upper),
+    GE    = lpeg.Cg ((lpeg.P "GE" + lpeg.P "ge") / string.upper),
+    NE    = lpeg.Cg ((lpeg.P "NE" + lpeg.P "ne") / string.upper),
+    MOD   = lpeg.Cg ((lpeg.P "MOD" + lpeg.P "mod") / string.upper),
+    SHL   = lpeg.Cg ((lpeg.P "SHL" + lpeg.P "shl") / string.upper),
+    SHR   = lpeg.Cg ((lpeg.P "SHR" + lpeg.P "shr") / string.upper),
+    HIGH  = lpeg.Cg ((lpeg.P "HIGH" + lpeg.P "high") / string.upper),
+    LOW   = lpeg.Cg ((lpeg.P "LOW" + lpeg.P "low") / string.upper),
+    PLUS  = lpeg.Cg (lpeg.P "+"),
+    MINUS = lpeg.Cg (lpeg.P "-"),
+    TIMES = lpeg.Cg (lpeg.P "*"),
+    DIV   = lpeg.Cg (lpeg.P "/"),
 }
 
-Intel8080.I = function (tag)
-    return lpeg.P(
-        function (_, i)
-            print(tag, i)
-            return true
-        end
-    )
-end
+intel8080.parsing.expression = {}
 
-Intel8080.tokenising.expression = {}
-
-Intel8080.tokenising.expression.flatten = function (expr)
+intel8080.parsing.expression.flatten = function (expr)
     if type(expr) == "table" and #expr == 1 then
         expr = expr[1]
     end
     return expr
 end
 
-Intel8080.tokenising.expression.collect = function (expr)
+intel8080.parsing.expression.collect = function (expr)
     if not expr[1] then return expr end
 
     expr.binary_operations = {}
@@ -540,67 +512,67 @@ Intel8080.tokenising.expression.collect = function (expr)
     return expr
 end
 
-Intel8080.tokenising.data.expression =
+intel8080.parsing.expression.rule =
     lpeg.P {
         [1] = "expression",
         expression = lpeg.Ct(
             lpeg.Cg(lpeg.V "disjunct")
             * (
-                Intel8080.tokenising.blank^1
+                intel8080.parsing.blank^1
                 * lpeg.Ct(lpeg.V "disjunction")
-                * Intel8080.tokenising.blank^1
+                * intel8080.parsing.blank^1
                 * lpeg.Cg(lpeg.V "disjunct")
             )^0
-        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+        ) / intel8080.parsing.expression.flatten / intel8080.parsing.expression.collect,
 
         disjunct = lpeg.Ct(
-            lpeg.Cg(lpeg.V "negand")
+            lpeg.Cg(lpeg.V "conjuct")
             * (
-                Intel8080.tokenising.blank^1
+                intel8080.parsing.blank^1
                 * lpeg.Ct(lpeg.V "conjunction")
-                * Intel8080.tokenising.blank^1
-                * lpeg.Cg(lpeg.V "negand")
+                * intel8080.parsing.blank^1
+                * lpeg.Cg(lpeg.V "conjuct")
             )^0
-        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+        ) / intel8080.parsing.expression.flatten / intel8080.parsing.expression.collect,
 
-        negand = lpeg.Ct(
+        conjuct = lpeg.Ct(
             lpeg.Cg(lpeg.V "comparison_operand")
             * (
-                Intel8080.tokenising.blank^1
+                intel8080.parsing.blank^1
                 * lpeg.Ct(lpeg.V "comparison")
-                * Intel8080.tokenising.blank^1
+                * intel8080.parsing.blank^1
                 * lpeg.Cg(lpeg.V "comparison_operand")
             )^0
-        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+        ) / intel8080.parsing.expression.flatten / intel8080.parsing.expression.collect,
 
         comparison_operand = lpeg.Ct(
             lpeg.Cg(lpeg.V "factor")
             * (
-                Intel8080.tokenising.blank^0
+                intel8080.parsing.blank^0
                 * lpeg.Ct(lpeg.V "addition")
-                * Intel8080.tokenising.blank^0
+                * intel8080.parsing.blank^0
                 * lpeg.Cg(lpeg.V "factor")
             )^0
-        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+        ) / intel8080.parsing.expression.flatten / intel8080.parsing.expression.collect,
 
         factor = lpeg.Ct(
             lpeg.Cg(lpeg.V "value")
             * (
                 (
-                    Intel8080.tokenising.blank^0
+                    intel8080.parsing.blank^0
                     * lpeg.Ct(lpeg.V "multiplication_symbol")
-                    * Intel8080.tokenising.blank^0
+                    * intel8080.parsing.blank^0
                     * lpeg.Cg(lpeg.V "value")
                 )
                 +
                 (
-                    Intel8080.tokenising.blank^1
+                    intel8080.parsing.blank^1
                     * lpeg.Ct(lpeg.V "multiplication_name")
-                    * Intel8080.tokenising.blank^1
+                    * intel8080.parsing.blank^1
                     * lpeg.Cg(lpeg.V "value")
                 )
             )^0
-        ) / Intel8080.tokenising.expression.flatten / Intel8080.tokenising.expression.collect,
+        ) / intel8080.parsing.expression.flatten / intel8080.parsing.expression.collect,
 
         value = lpeg.Ct(
             lpeg.Cg(
@@ -608,12 +580,12 @@ Intel8080.tokenising.data.expression =
                     (
                         (
                             lpeg.V "unary_operation_symbol"
-                            * Intel8080.tokenising.blank^0
+                            * intel8080.parsing.blank^0
                         )
                         +
                         (
                             lpeg.V "unary_operation_name"
-                            * Intel8080.tokenising.blank^1
+                            * intel8080.parsing.blank^1
                         )
                     )^0
                 )
@@ -623,229 +595,50 @@ Intel8080.tokenising.data.expression =
                 lpeg.V "number"
                 + lpeg.V "loc_counter"
                 + lpeg.V "asm_label"
-                + lpeg.V "ascii_literal"
                 + (
                     lpeg.P "("
-                    * Intel8080.tokenising.blank^0
+                    * intel8080.parsing.blank^0
                     * lpeg.Cg(lpeg.V "expression", "expression")
-                    * Intel8080.tokenising.blank^0
+                    * intel8080.parsing.blank^0
                     * lpeg.P ")"
                 )
             )
         ),
 
-        disjunction = lpeg.Cg(Intel8080.tokenising.operation.OR + Intel8080.tokenising.operation.XOR, "binary_operation"),
-        conjunction = lpeg.Cg(Intel8080.tokenising.operation.AND, "binary_operation"),
+        disjunction = lpeg.Cg(intel8080.parsing.operation.OR + intel8080.parsing.operation.XOR, "binary_operation"),
+        conjunction = lpeg.Cg(intel8080.parsing.operation.AND, "binary_operation"),
         unary_operation_name = lpeg.Cg(
-            Intel8080.tokenising.operation.NOT
-            + Intel8080.tokenising.operation.HIGH
-            + Intel8080.tokenising.operation.LOW
+            intel8080.parsing.operation.NOT
+            + intel8080.parsing.operation.HIGH
+            + intel8080.parsing.operation.LOW
         ),
         unary_operation_symbol = lpeg.Cg(
-            Intel8080.tokenising.operation.MINUS
+            intel8080.parsing.operation.MINUS
         ),
         comparison = lpeg.Cg(
-            Intel8080.tokenising.operation.EQ
-            + Intel8080.tokenising.operation.LT
-            + Intel8080.tokenising.operation.LE
-            + Intel8080.tokenising.operation.GT
-            + Intel8080.tokenising.operation.GE
-            + Intel8080.tokenising.operation.NE
+            intel8080.parsing.operation.EQ
+            + intel8080.parsing.operation.LT
+            + intel8080.parsing.operation.LE
+            + intel8080.parsing.operation.GT
+            + intel8080.parsing.operation.GE
+            + intel8080.parsing.operation.NE
             , "binary_operation"
         ),
-        addition = lpeg.Cg(Intel8080.tokenising.operation.PLUS + Intel8080.tokenising.operation.MINUS, "binary_operation"),
-        multiplication_symbol = lpeg.Cg(Intel8080.tokenising.operation.TIMES + Intel8080.tokenising.operation.DIV, "binary_operation"),
-        multiplication_name = lpeg.Cg(Intel8080.tokenising.operation.MOD + Intel8080.tokenising.operation.SHL + Intel8080.tokenising.operation.SHR, "binary_operation"),
+        addition = lpeg.Cg(intel8080.parsing.operation.PLUS + intel8080.parsing.operation.MINUS, "binary_operation"),
+        multiplication_symbol = lpeg.Cg(intel8080.parsing.operation.TIMES + intel8080.parsing.operation.DIV, "binary_operation"),
+        multiplication_name = lpeg.Cg(intel8080.parsing.operation.MOD + intel8080.parsing.operation.SHL + intel8080.parsing.operation.SHR, "binary_operation"),
         number = lpeg.Cg(
-            Intel8080.tokenising.data.numeric.hex
-            + Intel8080.tokenising.data.numeric.oct
-            + Intel8080.tokenising.data.numeric.bin
-            + Intel8080.tokenising.data.numeric.dec
+            intel8080.parsing.numeric.hex
+            + intel8080.parsing.numeric.oct
+            + intel8080.parsing.numeric.bin
+            + intel8080.parsing.numeric.dec
             , "numeric"
         ),
-        loc_counter = lpeg.Cg(Intel8080.tokenising.data.location_counter, "location_counter"),
-        asm_label = lpeg.Cg(Intel8080.tokenising.data.label, "label"),
-        ascii_literal = lpeg.Cg(Intel8080.tokenising.data.ascii_literal, "ascii"),
+        loc_counter = lpeg.Cg(intel8080.parsing.location_counter, "location_counter"),
+        asm_label = lpeg.Cg(intel8080.parsing.label, "label"),
     }
 
-Intel8080.formatting.format_expression = function (expr)
-    local result
-    if not (expr.binary_operations and expr.operands) then
-        result = ""
-        for _, op in ipairs(expr.unary_operations) do
-            result = result .. op
-            if #op ~= 1 then
-                result = result .. " "
-            end
-        end
-
-        if expr.numeric then
-            local radix = {["2"] = "B", ["8"] = "O", ["10"] = "", ["16"] = "H"}
-            result = result .. expr.numeric.value .. radix[expr.numeric.radix]
-        end
-        if expr.location_counter then
-            result = result .. "$"
-        end
-        if expr.label then
-            result = result .. expr.label
-        end
-        if expr.ascii then
-            result = result .. "'" .. expr.ascii:gsub("''", "'") .. "'"
-        end
-        if expr.expression then
-            result = result .. "(" .. Intel8080.formatting.format_expression(expr.expression) .. ")"
-        end
-    else
-        result = Intel8080.formatting.format_expression(expr.operands[1])
-        for i = 1, #expr.binary_operations do
-           result = result .. " " .. expr.binary_operations[i] .. " " .. Intel8080.formatting.format_expression(expr.operands[i + 1])
-        end
-    end
-
-    return result
-end
-
-Intel8080.assembly.to_signed_word = function (val)
-    return ((val + 0x7FFF) & 0xFFFF) - 0x7FFF
-end
-
-Intel8080.assembly.unary_operation = {
-    ["-"] = function (rhs)
-        return Intel8080.assembly.to_signed_word(-rhs)
-    end,
-    ["NOT"] = function (rhs)
-        return Intel8080.assembly.to_signed_word(~rhs)
-    end,
-    ["HIGH"] = function (rhs)
-        return Intel8080.assembly.to_signed_word((rhs & 0xFF00) >> 8)
-    end,
-    ["LOW"] = function (rhs)
-        return Intel8080.assembly.to_signed_word(rhs & 0x00FF)
-    end,
-}
-
-Intel8080.assembly.binary_operation = {
-    ["+"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs + rhs)
-    end,
-    ["-"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs - rhs)
-    end,
-    ["*"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs * rhs)
-    end,
-    ["/"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs // rhs)
-    end,
-    ["MOD"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs % rhs)
-    end,
-    ["SHL"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word((lhs & 0xFFFF) << rhs)
-    end,
-    ["SHR"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word((lhs & 0xFFFF) >> rhs)
-    end,
-    ["EQ"] = function (lhs, rhs)
-        if lhs == rhs then
-            return -0x0001
-        else
-            return 0x0000
-        end
-    end,
-    ["NE"] = function (lhs, rhs)
-        if lhs ~= rhs then
-            return -0x0001
-        else
-            return 0x0000
-        end
-    end,
-    ["LT"] = function (lhs, rhs)
-        if lhs < rhs then
-            return -0x0001
-        else
-            return 0x0000
-        end
-    end,
-    ["LE"] = function (lhs, rhs)
-        if lhs <= rhs then
-            return -0x0001
-        else
-            return 0x0000
-        end
-    end,
-    ["GT"] = function (lhs, rhs)
-        if lhs > rhs then
-            return -0x0001
-        else
-            return 0x0000
-        end
-    end,
-    ["GE"] = function (lhs, rhs)
-        if lhs >= rhs then
-            return -0x0001
-        else
-            return 0x0000
-        end
-    end,
-    ["AND"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs & rhs)
-    end,
-    ["OR"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs | rhs)
-    end,
-    ["XOR"] = function (lhs, rhs)
-        return Intel8080.assembly.to_signed_word(lhs ~ rhs)
-    end,
-}
-
-Intel8080.assembly.evaluate_expression = function (expr, loc_counter, labels)
-    local result
-    if not (expr.binary_operations and expr.operands) then
-        if expr.numeric then
-            result = Intel8080.assembly.to_signed_word(
-                Intel8080.tokenising.data.numeric.to_number(expr.numeric)
-            )
-        end
-        if expr.location_counter then
-            result = Intel8080.assembly.to_signed_word(
-                loc_counter
-            )
-        end
-        if expr.label then
-            result = Intel8080.assembly.to_signed_word(
-                labels[expr.label]
-            )
-        end
-        if expr.ascii then
-            result = {utf8.codepoint(expr.ascii, 1, 2)}
-            result = Intel8080.assembly.to_signed_word(
-                (result[1] << 8) + result[2]
-            )
-        end
-        if expr.expression then
-            result = Intel8080.assembly.to_signed_word(
-                Intel8080.assembly.evaluate_expression(expr.expression, loc_counter, labels)
-            )
-        end
-
-        for i = #expr.unary_operations, 1, -1 do
-            result = Intel8080.assembly.unary_operation[expr.unary_operations[i]](result)
-        end
-    else
-        result = Intel8080.assembly.to_signed_word(
-            Intel8080.assembly.evaluate_expression(expr.operands[1], loc_counter, labels)
-        )
-        for i = 1, #expr.binary_operations do
-            local rhs = Intel8080.assembly.evaluate_expression(expr.operands[i + 1], loc_counter, labels)
-            result = Intel8080.assembly.binary_operation[expr.binary_operations[i]](result, rhs)
-        end
-    end
-
-    return result
-end
-
-Intel8080.tokenising.generate_cmds = function (instructions)
+local generate_cmds = function (instructions)
     local final_result = nil
 
     for name, contents in pairs(instructions) do
@@ -863,35 +656,35 @@ Intel8080.tokenising.generate_cmds = function (instructions)
                 local next_arg = nil
 
                 if arg_contents.register then
-                    next_arg = lpeg.Cg(Intel8080.tokenising.data.register[arg_contents.register], "register")
+                    next_arg = lpeg.Cg(intel8080.parsing.register[arg_contents.register], "register")
                     next_arg = lpeg.Ct(next_arg)
                 elseif arg_contents.register_pair then
-                    next_arg = lpeg.Cg(Intel8080.tokenising.data.register_pair[arg_contents.register_pair], "register_pair")
+                    next_arg = lpeg.Cg(intel8080.parsing.register_pair[arg_contents.register_pair], "register_pair")
                     next_arg = lpeg.Ct(next_arg)
                 elseif arg_contents.byte then
-                    next_arg = lpeg.Cg(Intel8080.tokenising.data.expression, "byte")
+                    next_arg = lpeg.Cg(intel8080.parsing.expression.rule, "byte")
                     next_arg = lpeg.Ct(next_arg)
                     byte_count = byte_count + 1
                 elseif arg_contents.word then
-                    next_arg = lpeg.Cg(Intel8080.tokenising.data.expression, "word")
+                    next_arg = lpeg.Cg(intel8080.parsing.expression.rule, "word")
                     next_arg = lpeg.Ct(next_arg)
                     byte_count = byte_count + 2
                 elseif arg_contents.faux then
-                    next_arg = lpeg.Cg(Intel8080.tokenising.data.expression, "faux")
+                    next_arg = lpeg.Cg(intel8080.parsing.expression.rule, "faux")
                     next_arg = lpeg.Ct(next_arg)
                 end
 
                 if arg_list == nil then
                     arg_list = lpeg.Cg(next_arg)
                 else
-                    arg_list = arg_list * Intel8080.tokenising.blank^0 * Intel8080.tokenising.arg_sep * Intel8080.tokenising.blank^0 * lpeg.Cg(next_arg)
+                    arg_list = arg_list * intel8080.parsing.blank^0 * intel8080.parsing.arg_sep * intel8080.parsing.blank^0 * lpeg.Cg(next_arg)
                 end
             end
 
             if arg_list then
                 arg_list = lpeg.Cg(lpeg.Ct(arg_list), "args")
                 next_cmd = lpeg.Ct(
-                    next_cmd * Intel8080.tokenising.blank^1 * arg_list
+                    next_cmd * intel8080.parsing.blank^1 * arg_list
                 )
             else
                 next_cmd = lpeg.Ct(next_cmd)
@@ -918,54 +711,275 @@ Intel8080.tokenising.generate_cmds = function (instructions)
     return final_result
 end
 
-Intel8080.tokenising.cmd = Intel8080.tokenising.generate_cmds(
-    Intel8080.assembly.cmd
-)
+intel8080.parsing.cmd = generate_cmds(intel8080.langdef.opcodes)
 
-Intel8080.tokenising.line = lpeg.P {
+intel8080.parsing.line = lpeg.P {
     [1] = "line",
     line = lpeg.Ct(
-        (
-            Intel8080.tokenising.blank^0
-            * lpeg.V "label"
-            * Intel8080.tokenising.label_delim
-            * Intel8080.tokenising.blank^0
-        )^-1
-        *
-        (
-            Intel8080.tokenising.blank^0
-            * lpeg.V "cmd"
-            * Intel8080.tokenising.blank^0
-        )^-1
-        *
-        (
-            Intel8080.tokenising.blank^0
-            * Intel8080.tokenising.comment_delim
-            * Intel8080.tokenising.blank^0
-            * lpeg.V "comment"
-        )^-1
+        lpeg.V "label"
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.label_delim
+        * intel8080.parsing.blank^0
+        * lpeg.V "cmd"
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.comment_delim
+        * intel8080.parsing.blank^0
+        * lpeg.V "comment"
+    )
+    + lpeg.Ct(
+        lpeg.V "cmd"
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.comment_delim
+        * intel8080.parsing.blank^0
+        * lpeg.V "comment"
+    )
+    + lpeg.Ct(
+        lpeg.V "label"
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.label_delim
+        * intel8080.parsing.blank^0
+        * lpeg.V "cmd"
+        * intel8080.parsing.blank^0
+    )
+    + lpeg.Ct(
+        lpeg.V "label"
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.label_delim
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.comment_delim
+        * intel8080.parsing.blank^0
+        * lpeg.V "comment"
+    )
+    + lpeg.Ct(
+        lpeg.V "label"
+        * intel8080.parsing.blank^0
+        * intel8080.parsing.label_delim
+        * intel8080.parsing.blank^0
+    )
+    + lpeg.Ct(
+        lpeg.V "cmd"
+        * intel8080.parsing.blank^0
+    )
+    + lpeg.Ct(
+        intel8080.parsing.comment_delim
+        * intel8080.parsing.blank^0
+        * lpeg.V "comment"
     ),
 
     label = lpeg.Cg(
-        Intel8080.tokenising.data.label, "label"
+        intel8080.parsing.label, "label"
     ),
     cmd = lpeg.Cg(
-        Intel8080.tokenising.cmd, "cmd"
+        intel8080.parsing.cmd, "cmd"
     ),
     comment = lpeg.Cg(
-        (lpeg.P(1) - Intel8080.tokenising.newline)^0, "comment"
+        (lpeg.P(1) - intel8080.parsing.newline)^0, "comment"
     ),
 }
 
-Intel8080.tokenising.listing = lpeg.Ct(
-    Intel8080.tokenising.line * ((Intel8080.tokenising.newline)^1 * Intel8080.tokenising.line)^0 * lpeg.P(-1)
+intel8080.parsing.listing = lpeg.Ct(
+    (intel8080.parsing.blank + intel8080.parsing.newline)^0
+    * intel8080.parsing.line
+    * (intel8080.parsing.blank + intel8080.parsing.newline)^0
+    * (
+        (intel8080.parsing.blank + intel8080.parsing.newline)^0
+        * intel8080.parsing.line
+        * (intel8080.parsing.blank + intel8080.parsing.newline)^0
+    )^0
 )
+* lpeg.P (-1)
 
-Intel8080.assembly.assemble = function (code, location_counter, labels)
+intel8080.assembly = {}
+
+intel8080.assembly.to_unsigned_word = function (val)
+    return val & 0xFFFF
+end
+
+intel8080.assembly.match_to_number = function (num_match)
+    return tonumber(num_match.value, num_match.radix)
+end
+
+intel8080.assembly.unary_operation = {
+    ["-"] = function (rhs)
+        return intel8080.assembly.to_unsigned_word(-rhs)
+    end,
+    ["NOT"] = function (rhs)
+        return intel8080.assembly.to_unsigned_word(~rhs)
+    end,
+    ["HIGH"] = function (rhs)
+        return intel8080.assembly.to_unsigned_word((rhs & 0xFF00) >> 8)
+    end,
+    ["LOW"] = function (rhs)
+        return intel8080.assembly.to_unsigned_word(rhs & 0x00FF)
+    end,
+}
+
+intel8080.assembly.binary_operation = {
+    ["+"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            +
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["-"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            -
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["*"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            *
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["/"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            //
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["MOD"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            %
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["SHL"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            <<
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["SHR"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            >>
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["EQ"] = function (lhs, rhs)
+        if lhs == rhs then
+            return 0xFFFF
+        else
+            return 0x0000
+        end
+    end,
+    ["NE"] = function (lhs, rhs)
+        if lhs ~= rhs then
+            return 0xFFFF
+        else
+            return 0x0000
+        end
+    end,
+    ["LT"] = function (lhs, rhs)
+        if lhs < rhs then
+            return 0xFFFF
+        else
+            return 0x0000
+        end
+    end,
+    ["LE"] = function (lhs, rhs)
+        if lhs <= rhs then
+            return 0xFFFF
+        else
+            return 0x0000
+        end
+    end,
+    ["GT"] = function (lhs, rhs)
+        if lhs > rhs then
+            return 0xFFFF
+        else
+            return 0x0000
+        end
+    end,
+    ["GE"] = function (lhs, rhs)
+        if lhs >= rhs then
+            return 0xFFFF
+        else
+            return 0x0000
+        end
+    end,
+    ["AND"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            &
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["OR"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            |
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+    ["XOR"] = function (lhs, rhs)
+        return intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.to_unsigned_word(lhs)
+            ~
+            intel8080.assembly.to_unsigned_word(rhs)
+        )
+    end,
+}
+
+intel8080.assembly.evaluate_expression = function (expr, loc_counter, labels)
+    local result
+    if not (expr.binary_operations and expr.operands) then
+        if expr.numeric then
+            result = intel8080.assembly.to_unsigned_word(
+                intel8080.assembly.match_to_number(expr.numeric)
+            )
+        end
+        if expr.location_counter then
+            result = intel8080.assembly.to_unsigned_word(
+                loc_counter
+            )
+        end
+        if expr.label then
+            result = intel8080.assembly.to_unsigned_word(
+                labels[expr.label]
+            )
+        end
+        if expr.ascii then
+            result = {utf8.codepoint(expr.ascii, 1, 2)}
+            result = intel8080.assembly.to_unsigned_word(
+                (result[1] << 8) + result[2]
+            )
+        end
+        if expr.expression then
+            result = intel8080.assembly.to_unsigned_word(
+                intel8080.assembly.evaluate_expression(expr.expression, loc_counter, labels)
+            )
+        end
+
+        for i = #expr.unary_operations, 1, -1 do
+            result = intel8080.assembly.unary_operation[expr.unary_operations[i]](result)
+        end
+    else
+        result = intel8080.assembly.to_unsigned_word(
+            intel8080.assembly.evaluate_expression(expr.operands[1], loc_counter, labels)
+        )
+        for i = 1, #expr.binary_operations do
+            local rhs = intel8080.assembly.evaluate_expression(expr.operands[i + 1], loc_counter, labels)
+            result = intel8080.assembly.binary_operation[expr.binary_operations[i]](result, rhs)
+        end
+    end
+
+    return result
+end
+
+intel8080.assembly.assemble = function (code, location_counter, labels)
     location_counter = location_counter or 0x0000
     labels = labels or {}
     local starting_location_counter = location_counter
-    code = Intel8080.tokenising.listing:match(code)
+    code = intel8080.parsing.listing:match(code)
 
     -- pass 1
     for _, line in ipairs(code) do
@@ -991,14 +1005,14 @@ Intel8080.assembly.assemble = function (code, location_counter, labels)
         if line.cmd then
             if line.cmd.args then
                 if line.cmd.args[#line.cmd.args].byte then
-                    local val = Intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].byte, location_counter, labels)
+                    local val = intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].byte, location_counter, labels)
                     line.cmd.bytes[2] = val & 0x00FF
                 elseif line.cmd.args[#line.cmd.args].word then
-                    local val = Intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].word, location_counter, labels)
+                    local val = intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].word, location_counter, labels)
                     line.cmd.bytes[2] = val & 0x00FF
                     line.cmd.bytes[3] = (val & 0xFF00) >> 8
                 elseif line.cmd.args[#line.cmd.args].faux then
-                    local val = Intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].faux, location_counter, labels)
+                    local val = intel8080.assembly.evaluate_expression(line.cmd.args[#line.cmd.args].faux, location_counter, labels)
                     line.cmd.bytes[1] = line.cmd.bytes[1][val]
                     if line.cmd.bytes[1] == nil then
                         error("malformed faux argument to " .. line.cmd.cmd_name)
@@ -1014,124 +1028,47 @@ Intel8080.assembly.assemble = function (code, location_counter, labels)
     return code
 end
 
--- Intel8080.formatting.make_text_listing = function (code, location_counter, labels)
---     local state = Intel8080.assembly.assemble(code, location_counter, labels)
---     local formatted_lines = {}
---     local last_formatted_line = 0
--- 
---     for _, line in ipairs(state) do
---         if not line.cmd and not line.comment and not line.label then
---             goto continue
---         end
--- 
---         if last_formatted_line == 0 or line.location_counter ~= formatted_lines[last_formatted_line].location_counter then
---             last_formatted_line = last_formatted_line + 1
---             formatted_lines[last_formatted_line] = {
---                 location_counter = line.location_counter,
---                 label = {line.label},
---                 bytes = line.cmd and line.cmd.bytes or {},
---                 asm = line.cmd and {cmd_name = line.cmd.cmd_name, args = line.cmd.args} or nil,
---                 comment = {line.comment}
---             }
---         else
---             table.insert(formatted_lines[last_formatted_line].label, line.label)
---             table.insert(formatted_lines[last_formatted_line].comment, line.comment)
---             formatted_lines[last_formatted_line].asm = line.cmd and {cmd_name = line.cmd.cmd_name, args = line.cmd.args} or nil
---             formatted_lines[last_formatted_line].bytes = line.cmd and line.cmd.bytes or nil
---         end
---         ::continue::
---     end
--- 
---     local final_result = {}
--- 
---     for line_no, line in ipairs(formatted_lines) do
---         local counter = line.location_counter
---         local result = {"", "", "", "", ""}
--- 
---         result[1] = result[1] .. string.format([==[%.4XH]==], counter)
--- 
---         for i, label in ipairs(line.label) do
---             result[2] = result[2] .. string.format([==[%s:]==], label)
---         end
--- 
---         for i, byte in ipairs(line.bytes) do
---             result[3] = result[3] .. string.format([==[%.2X]==], byte)
---             counter = counter + 1
---         end
--- 
---         local args = ""
---         if line.asm.args then
---             for i, arg in ipairs(line.asm.args) do
---                 local formatted
---                 if arg.register or arg.register_pair then
---                     formatted = arg.register or arg.register_pair
---                 elseif arg.byte or arg.word or arg.faux then
---                     formatted = Intel8080.formatting.format_expression(arg.byte or arg.word or arg.faux)
---                 end
--- 
---                 if i == 1 then
---                     args = formatted
---                 else
---                     args = args .. ", " .. formatted
---                 end
---             end
--- 
---             result[4] = string.format([==[%s %s]==], line.asm.cmd_name, args)
---         else
---             result[4] = string.format([==[%s]==], line.asm.cmd_name)
---         end
--- 
---         for i, comment in ipairs(line.comment) do
---             if i == 1 then
---                 result[5] = string.format([==[%s]==], comment)
---             else
---                 result[5] = string.format([==[ %s]==], comment)
---             end
---         end
--- 
---         table.insert(final_result, result)
---     end
--- 
---     local max_label
---     local max_bin
---     local max_cmd
--- 
---     for _, line in ipairs(final_result) do
---         max_label = math.max(max_label or 0, #(line[2]))
---         max_bin = math.max(max_bin or 0, #(line[3]))
---         max_cmd = math.max(max_cmd or 0, #(line[4]))
---     end
--- 
---     local bin_space
---     if max_label == 0 then
---         max_label = ""
---         bin_space = ""
---     else
---         bin_space = "    "
---     end
---     if max_bin == 0 then
---         max_bin = ""
---     end
---     if max_cmd == 0 then
---         max_cmd = ""
---     end
--- 
---     local printout
---     for _, result in ipairs(final_result) do
---         printout = (printout and printout .. "\n" or "")
---             .. result[1]
---             .. string.format("    %" .. max_label .. "s", result[2])
---             .. bin_space
---             .. string.format("%-" .. max_bin .. "s", result[3])
---             .. string.format("    %-" .. max_cmd .. "s", result[4])
---             .. "    " .. result[5]
---     end
--- 
---     return printout
--- end
+intel8080.formatting = {}
 
-Intel8080.formatting.make_listing = function (code, location_counter, labels)
-    local state = Intel8080.assembly.assemble(code, location_counter, labels)
+intel8080.formatting.format_expression = function (expr)
+    local result
+    if not (expr.binary_operations and expr.operands) then
+        result = ""
+        for _, op in ipairs(expr.unary_operations) do
+            result = result .. op
+            if #op ~= 1 then
+                result = result .. " "
+            end
+        end
+
+        if expr.numeric then
+            local radix = {["2"] = "B", ["8"] = "O", ["10"] = "", ["16"] = "H"}
+            result = result .. expr.numeric.value .. radix[expr.numeric.radix]
+        end
+        if expr.location_counter then
+            result = result .. "$"
+        end
+        if expr.label then
+            result = result .. expr.label
+        end
+        if expr.ascii then
+            result = result .. "'" .. expr.ascii:gsub("''", "'") .. "'"
+        end
+        if expr.expression then
+            result = result .. "(" .. intel8080.formatting.format_expression(expr.expression) .. ")"
+        end
+    else
+        result = intel8080.formatting.format_expression(expr.operands[1])
+        for i = 1, #expr.binary_operations do
+           result = result .. " " .. expr.binary_operations[i] .. " " .. intel8080.formatting.format_expression(expr.operands[i + 1])
+        end
+    end
+
+    return result
+end
+
+intel8080.formatting.make_text_listing = function (code, location_counter, labels)
+    local state = intel8080.assembly.assemble(code, location_counter, labels)
     local formatted_lines = {}
     local last_formatted_line = 0
 
@@ -1158,17 +1095,128 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
         ::continue::
     end
 
-    context.setupxtable({"booktabs"}, {
+    local final_result = {}
+
+    for line_no, line in ipairs(formatted_lines) do
+        local counter = line.location_counter
+        local result = {"", "", "", "", ""}
+
+        result[1] = result[1] .. string.format([==[%.4XH]==], counter)
+
+        for i, label in ipairs(line.label) do
+            result[2] = result[2] .. string.format([==[%s:]==], label)
+        end
+
+        for i, byte in ipairs(line.bytes) do
+            result[3] = result[3] .. string.format([==[%.2X]==], byte)
+            counter = counter + 1
+        end
+
+        local args = ""
+        if line.asm.args then
+            for i, arg in ipairs(line.asm.args) do
+                local formatted
+                if arg.register or arg.register_pair then
+                    formatted = arg.register or arg.register_pair
+                elseif arg.byte or arg.word or arg.faux then
+                    formatted = intel8080.formatting.format_expression(arg.byte or arg.word or arg.faux)
+                end
+
+                if i == 1 then
+                    args = formatted
+                else
+                    args = args .. ", " .. formatted
+                end
+            end
+
+            result[4] = string.format([==[%s %s]==], line.asm.cmd_name, args)
+        else
+            result[4] = string.format([==[%s]==], line.asm.cmd_name)
+        end
+
+        for i, comment in ipairs(line.comment) do
+            if i == 1 then
+                result[5] = string.format([==[%s]==], comment)
+            else
+                result[5] = string.format([==[ %s]==], comment)
+            end
+        end
+
+        table.insert(final_result, result)
+    end
+
+    local max_label
+    local max_bin
+    local max_cmd
+
+    for _, line in ipairs(final_result) do
+        max_label = math.max(max_label or 0, #(line[2]))
+        max_bin = math.max(max_bin or 0, #(line[3]))
+        max_cmd = math.max(max_cmd or 0, #(line[4]))
+    end
+
+    local bin_space
+    if max_label == 0 then
+        max_label = ""
+        bin_space = ""
+    else
+        bin_space = "    "
+    end
+    if max_bin == 0 then
+        max_bin = ""
+    end
+    if max_cmd == 0 then
+        max_cmd = ""
+    end
+
+    local printout
+    for _, result in ipairs(final_result) do
+        printout = (printout and printout .. "\n" or "")
+            .. result[1]
+            .. string.format("    %" .. max_label .. "s", result[2])
+            .. bin_space
+            .. string.format("%-" .. max_bin .. "s", result[3])
+            .. string.format("    %-" .. max_cmd .. "s", result[4])
+            .. "    " .. result[5]
+    end
+
+    return printout
+end
+
+intel8080.formatting.make_listing = function (code, location_counter, labels)
+    local state = intel8080.assembly.assemble(code, location_counter, labels)
+    local formatted_lines = {}
+    local last_formatted_line = 0
+
+    for _, line in ipairs(state) do
+        if not line.cmd and not line.comment and not line.label then
+            goto continue
+        end
+
+        if last_formatted_line == 0 or line.location_counter ~= formatted_lines[last_formatted_line].location_counter then
+            last_formatted_line = last_formatted_line + 1
+            formatted_lines[last_formatted_line] = {
+                location_counter = line.location_counter,
+                label = {line.label},
+                bytes = line.cmd and line.cmd.bytes or {},
+                asm = line.cmd and {cmd_name = line.cmd.cmd_name, args = line.cmd.args} or nil,
+                comment = {line.comment}
+            }
+        else
+            table.insert(formatted_lines[last_formatted_line].label, line.label)
+            table.insert(formatted_lines[last_formatted_line].comment, line.comment)
+            formatted_lines[last_formatted_line].asm = line.cmd and {cmd_name = line.cmd.cmd_name, args = line.cmd.args} or nil
+            formatted_lines[last_formatted_line].bytes = line.cmd and line.cmd.bytes or nil
+        end
+        ::continue::
+    end
+
+    context.setupxtable({
         bodyfont = "10pt",
     })
-    context.startxtable({"booktabs"})
+    context.startxtable()
 
     context.startxtablehead()
-
-    context.startxrow({align = "center, lohi"})
-        context.startxcell({"booktabs:toprule"}, {nx="5"})
-        context.stopxcell()
-    context.stopxrow()
 
     context.startxrow({align = "center, lohi"})
         context.startxcell({option = "fixed", width = "\\dimexpr\\widthofstring{Адрес}"})
@@ -1192,11 +1240,6 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
         context.stopxcell()
     context.stopxrow()
 
-    context.startxrow({align = "center, lohi"})
-        context.startxcell({"booktabs:midrule"}, {nx="5"})
-        context.stopxcell()
-    context.stopxrow()
-
     context.stopxtablehead()
 
     context.startxtablebody()
@@ -1207,9 +1250,9 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
                 local result
                 for i, _ in ipairs(line.bytes) do
                     if i == 1 then
-                        result = string.format([==[\tech{\unit{%.4X}H}]==], counter)
+                        result = string.format([==[{\tt %.4XH}]==], counter)
                     else
-                        result = result .. string.format([==[\blank[none]\tech{\unit{%.4X}H}]==], counter)
+                        result = result .. string.format([==[\blank[none]{\tt %.4XH}]==], counter)
                     end
                     counter = counter + 1
                 end
@@ -1220,9 +1263,9 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
                 local result
                 for i, label in ipairs(line.label) do
                     if i == 1 then
-                        result = string.format([==[\tech{%s:}]==], label)
+                        result = string.format([==[{\tt %s:}]==], label)
                     else
-                        result = result .. string.format([==[\blank[none]\tech{%s:}]==], label)
+                        result = result .. string.format([==[\blank[none]{\tt %s:}]==], label)
                     end
                 end
                 context(result)
@@ -1232,9 +1275,9 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
                 local result
                 for i, byte in ipairs(line.bytes) do
                     if i == 1 then
-                        result = string.format([==[\tech{%.2X}]==], byte)
+                        result = string.format([==[{\tt %.2X}]==], byte)
                     else
-                        result = result .. string.format([==[\blank[none]\tech{%.2X}]==], byte)
+                        result = result .. string.format([==[\blank[none]{\tt %.2X}]==], byte)
                     end
                     counter = counter + 1
                 end
@@ -1249,7 +1292,7 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
                         if arg.register or arg.register_pair then
                             formatted = arg.register or arg.register_pair
                         elseif arg.byte or arg.word or arg.faux then
-                            formatted = Intel8080.formatting.format_expression(arg.byte or arg.word or arg.faux)
+                            formatted = intel8080.formatting.format_expression(arg.byte or arg.word or arg.faux)
                         end
 
                         if i == 1 then
@@ -1259,9 +1302,9 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
                         end
                     end
 
-                    context([==[\tech{%s %s}]==], line.asm.cmd_name, args)
+                    context([==[{\tt %s %s}]==], line.asm.cmd_name, args)
                 else
-                    context([==[\tech{%s}]==], line.asm.cmd_name)
+                    context([==[{\tt %s}]==], line.asm.cmd_name)
                 end
             context.stopxcell()
 
@@ -1275,29 +1318,16 @@ Intel8080.formatting.make_listing = function (code, location_counter, labels)
                 end
             context.stopxcell()
         context.stopxrow()
-
-        if line_no ~= #formatted_lines then
-            context.startxrow({align = "center, lohi"})
-                context.startxcell({"booktabs:addlinespace"}, {nx="5"})
-                context.stopxcell()
-            context.stopxrow()
-        end
     end
+
     context.stopxtablebody()
 
     context.startxtablefoot()
-
-    context.startxrow({align = "center, lohi"})
-        context.startxcell({"booktabs:bottomrule"}, {nx="5"})
-        context.stopxcell()
-    context.stopxrow()
 
     context.stopxtablefoot()
 
     context.stopxtable()
 end
-
-return Intel8080
 
 \stopluacode
 
